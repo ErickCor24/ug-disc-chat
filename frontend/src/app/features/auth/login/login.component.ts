@@ -11,8 +11,11 @@ import { AuthService } from '../../../core/services/auth.service';
   template: `
     <div class="auth-container">
       <div class="auth-card">
-        <h1>Bienvenido</h1>
-        <p class="subtitle">Inicia sesión para continuar</p>
+        <div class="brand">
+          <span class="brand-icon">💬</span>
+          <h1>Bienvenido</h1>
+          <p class="subtitle">Inicia sesión para continuar</p>
+        </div>
 
         @if (errorMessage()) {
           <div class="error-banner">{{ errorMessage() }}</div>
@@ -44,12 +47,8 @@ import { AuthService } from '../../../core/services/auth.service';
             />
           </div>
 
-          <button type="submit" [disabled]="form.invalid || loading()">
-            @if (loading()) {
-              Iniciando sesión...
-            } @else {
-              Iniciar Sesión
-            }
+          <button class="submit-btn" type="submit" [disabled]="form.invalid || loading()">
+            @if (loading()) { Iniciando sesión... } @else { Iniciar Sesión }
           </button>
         </form>
 

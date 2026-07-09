@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ChatService } from '../../../core/services/chat.service';
@@ -8,15 +8,13 @@ import { ChatService } from '../../../core/services/chat.service';
   standalone: true,
   imports: [FormsModule],
   template: `
-    <!-- Banner "está escribiendo..." -->
+    <!-- Indicador "está escribiendo..." -->
     @if (typingUsers().length > 0) {
       <div class="typing-indicator" aria-live="polite">
         <span class="dots">
           <span></span><span></span><span></span>
         </span>
-        <span class="typing-text">
-          {{ typingLabel() }}
-        </span>
+        <span class="typing-text">{{ typingLabel() }}</span>
       </div>
     }
 
@@ -26,7 +24,7 @@ import { ChatService } from '../../../core/services/chat.service';
         class="message-input"
         [(ngModel)]="messageText"
         name="message"
-        [placeholder]="'Mensaje en #' + channelName"
+        [placeholder]="'Escribe en #' + channelName + '…'"
         [disabled]="!connected()"
         (input)="onInput()"
         (keydown.enter)="$event.preventDefault(); submit()"
@@ -40,23 +38,24 @@ import { ChatService } from '../../../core/services/chat.service';
         [disabled]="!messageText.trim() || !connected()"
         aria-label="Enviar mensaje"
       >
-        ➤
+        <span class="send-icon">↑</span>
       </button>
     </form>
   `,
   styles: [`
     :host {
       display: block;
+      flex-shrink: 0;
     }
 
     .typing-indicator {
       align-items: center;
-      color: #8899aa;
+      color: var(--color-text-muted);
       display: flex;
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       gap: 0.5rem;
       min-height: 1.5rem;
-      padding: 0.25rem 1.25rem;
+      padding: 0.2rem 1.5rem 0;
 
       .dots {
         display: flex;
@@ -64,7 +63,7 @@ import { ChatService } from '../../../core/services/chat.service';
 
         span {
           animation: bounce 1.2s infinite ease-in-out;
-          background: #8899aa;
+          background: var(--color-text-light);
           border-radius: 50%;
           display: block;
           height: 5px;
@@ -83,42 +82,79 @@ import { ChatService } from '../../../core/services/chat.service';
 
     .input-area {
       align-items: center;
-      background: #1f2937;
-      border-top: 1px solid #374151;
       display: flex;
       gap: 0.75rem;
-      padding: 1rem 1.25rem;
+      padding: 0.875rem 1.25rem 1rem;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-top: 1px solid var(--color-border);
     }
 
     .message-input {
-      background: #111827;
-      border: 1px solid #374151;
-      border-radius: 8px;
-      color: #e0e0e0;
+      background: rgba(255,255,255,0.75);
+      border: 1.5px solid var(--color-border-strong);
+      border-radius: 22px;
+      color: var(--color-text);
       flex: 1;
-      font-size: 0.9rem;
+      font-family: var(--font);
+      font-size: 0.97rem;
       outline: none;
-      padding: 0.65rem 1rem;
-      transition: border-color 0.2s;
+      padding: 0.7rem 1.1rem;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      box-shadow: var(--shadow-sm);
 
-      &::placeholder { color: #4a5568; }
-      &:focus { border-color: #5865f2; }
-      &:disabled { opacity: 0.5; cursor: not-allowed; }
+      &::placeholder { color: var(--color-text-light); }
+
+      &:focus {
+        background: rgba(255,255,255,0.92);
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px var(--color-accent-soft), var(--shadow-sm);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
 
     .send-btn {
-      background: #5865f2;
+      align-items: center;
+      background: var(--color-accent);
       border: none;
-      border-radius: 8px;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.35);
       color: #fff;
       cursor: pointer;
-      font-size: 1rem;
-      height: 40px;
-      transition: background 0.2s, opacity 0.2s;
-      width: 40px;
+      display: flex;
+      height: 42px;
+      justify-content: center;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      width: 42px;
+      flex-shrink: 0;
 
-      &:hover:not(:disabled) { background: #4752c4; }
-      &:disabled { cursor: not-allowed; opacity: 0.5; }
+      .send-icon {
+        font-size: 1.1rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      &:hover:not(:disabled) {
+        background: var(--color-accent-hover);
+        box-shadow: 0 6px 18px rgba(99,102,241,0.45);
+        transform: translateY(-1px) scale(1.05);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0) scale(0.97);
+      }
+
+      &:disabled {
+        background: var(--color-text-light);
+        box-shadow: none;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
     }
   `],
 })
@@ -149,7 +185,6 @@ export class MessageInputComponent {
   submit(): void {
     const text = this.messageText.trim();
     if (!text) return;
-
     this.chatService.sendMessage(text);
     this.messageText = '';
     this.messageSent.emit();

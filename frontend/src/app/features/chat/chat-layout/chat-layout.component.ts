@@ -16,8 +16,12 @@ import { MessageListComponent } from '../message-list/message-list.component';
     <!-- Sidebar con lista de canales -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h2>💬 ChatApp</h2>
+        <div class="brand-name">
+          <span class="brand-emoji">💬</span>
+          <h2>ChatApp</h2>
+        </div>
         <button class="logout-btn" (click)="logout()" aria-label="Cerrar sesión">
+          <span class="logout-icon">⎋</span>
           Salir
         </button>
       </div>
@@ -37,6 +41,9 @@ import { MessageListComponent } from '../message-list/message-list.component';
         <header class="chat-header">
           <span class="channel-hash">#</span>
           <h3>{{ channel.name }}</h3>
+          @if (channel.description) {
+            <span class="channel-desc">{{ channel.description }}</span>
+          }
         </header>
 
         <div class="chat-body">

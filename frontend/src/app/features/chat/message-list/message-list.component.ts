@@ -11,6 +11,38 @@ import { Message } from '../../../core/models';
 import { DateFormatPipe } from '../../../core/pipes/date-format.pipe';
 import { AuthService } from '../../../core/services/auth.service';
 
+/** Paleta de 8 colores para asignar a usuarios por hash del username */
+const USER_COLORS = [
+  '#e05c5c', // rojo
+  '#d97706', // ámbar
+  '#059669', // esmeralda
+  '#7c3aed', // violeta
+  '#db2777', // rosa
+  '#0891b2', // cian
+  '#65a30d', // lima
+  '#c2410c', // naranja
+];
+
+/** Fondo suave correspondiente a cada color */
+const USER_BG_COLORS = [
+  'rgba(224,92,92,0.10)',
+  'rgba(217,119,6,0.10)',
+  'rgba(5,150,105,0.10)',
+  'rgba(124,58,237,0.10)',
+  'rgba(219,39,119,0.10)',
+  'rgba(8,145,178,0.10)',
+  'rgba(101,163,13,0.10)',
+  'rgba(194,65,12,0.10)',
+];
+
+function hashUsername(username: string): number {
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = (hash * 31 + username.charCodeAt(i)) >>> 0;
+  }
+  return hash % USER_COLORS.length;
+}
+
 @Component({
   selector: 'app-message-list',
   standalone: true,
@@ -19,81 +51,173 @@ import { AuthService } from '../../../core/services/auth.service';
     <div class="message-list" #scrollContainer>
       @if (messages().length === 0) {
         <div class="empty-state">
-          <p>No hay mensajes aún. ¡Sé el primero en escribir!</p>
+          <span class="empty-icon">🫧</span>
+          <p>No hay mensajes aún.</p>
+          <span class="empty-sub">¡Sé el primero en escribir!</span>
         </div>
       }
 
       @for (msg of messages(); track msg.id) {
-        <div class="message" [class.own]="msg.user_id === currentUserId()">
-          <div class="message-meta">
-            <span class="username">{{ msg.username ?? 'Usuario eliminado' }}</span>
-            <span class="timestamp">{{ msg.created_at | dateFormat }}</span>
+        <div class="message-row" [class.own]="msg.user_id === currentUserId()">
+          <!-- Avatar -->
+          @if (msg.user_id !== currentUserId()) {
+            <div class="avatar"
+              [style.background]="getBgColor(msg.username)"
+              [style.color]="getColor(msg.username)"
+              [attr.aria-label]="msg.username ?? 'Usuario'">
+              {{ getInitial(msg.username) }}
+            </div>
+          }
+
+          <div class="bubble-group">
+            <!-- Meta (solo mensajes de otros) -->
+            @if (msg.user_id !== currentUserId()) {
+              <div class="message-meta">
+                <span class="username" [style.color]="getColor(msg.username)">
+                  {{ msg.username ?? 'Usuario eliminado' }}
+                </span>
+                <span class="timestamp">{{ msg.created_at | dateFormat }}</span>
+              </div>
+            }
+
+            <!-- Burbuja -->
+            <div class="bubble" [class.own]="msg.user_id === currentUserId()">
+              <span class="message-content">{{ msg.content }}</span>
+              @if (msg.user_id === currentUserId()) {
+                <span class="timestamp own-time">{{ msg.created_at | dateFormat }}</span>
+              }
+            </div>
           </div>
-          <div class="message-content">{{ msg.content }}</div>
         </div>
       }
     </div>
   `,
   styles: [`
-    .message-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem 1.25rem;
+    :host {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .message-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
       scroll-behavior: smooth;
 
-      &::-webkit-scrollbar { width: 6px; }
+      &::-webkit-scrollbar { width: 5px; }
       &::-webkit-scrollbar-thumb {
-        background: #334;
-        border-radius: 3px;
+        background: rgba(0,0,0,0.12);
+        border-radius: 99px;
       }
     }
 
     .empty-state {
-      color: #556;
-      font-size: 0.875rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
       margin: auto;
+      color: var(--color-text-muted);
       text-align: center;
+
+      .empty-icon { font-size: 2.5rem; }
+      p { margin: 0; font-size: 1rem; font-weight: 500; }
+      .empty-sub { font-size: 0.875rem; color: var(--color-text-light); }
     }
 
-    .message {
-      max-width: 70%;
-      padding: 0.5rem 0.875rem;
-      border-radius: 12px;
-      background: #1f2937;
-      align-self: flex-start;
+    .message-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.6rem;
 
       &.own {
-        align-self: flex-end;
-        background: #2d3b8e;
+        flex-direction: row-reverse;
       }
+    }
 
-      .message-meta {
+    /* Avatar circular con inicial */
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+      border: 1.5px solid rgba(255,255,255,0.7);
+    }
+
+    .bubble-group {
+      display: flex;
+      flex-direction: column;
+      max-width: 68%;
+      gap: 0.2rem;
+    }
+
+    .message-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      padding-left: 0.25rem;
+    }
+
+    .username {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .timestamp {
+      color: var(--color-text-light);
+      font-size: 0.72rem;
+    }
+
+    /* Burbuja de mensaje */
+    .bubble {
+      background: var(--color-bubble-other);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 18px 18px 18px 4px;
+      box-shadow: var(--shadow-sm);
+      color: var(--color-bubble-other-text);
+      padding: 0.65rem 1rem;
+      position: relative;
+
+      &.own {
+        background: var(--color-bubble-own);
+        border-color: transparent;
+        border-radius: 18px 18px 4px 18px;
+        color: var(--color-bubble-own-text);
+        box-shadow: 0 4px 14px rgba(99,102,241,0.30);
         display: flex;
-        gap: 0.5rem;
-        align-items: baseline;
-        margin-bottom: 0.2rem;
+        align-items: flex-end;
+        gap: 0.6rem;
       }
+    }
 
-      .username {
-        color: #5865f2;
-        font-size: 0.78rem;
-        font-weight: 600;
-      }
+    .message-content {
+      font-size: 0.97rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
 
-      .timestamp {
-        color: #4a5568;
-        font-size: 0.7rem;
-      }
-
-      .message-content {
-        color: #d1d5db;
-        font-size: 0.9rem;
-        line-height: 1.4;
-        word-break: break-word;
-      }
+    .own-time {
+      color: rgba(255,255,255,0.65);
+      font-size: 0.7rem;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
   `],
 })
@@ -102,11 +226,25 @@ export class MessageListComponent implements AfterViewChecked {
 
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef<HTMLDivElement>;
 
-  /** Signal input — recibe los mensajes como signal desde el padre. */
   readonly messages = input<Message[]>([]);
 
   currentUserId(): string | null {
     return this.authService.currentUser()?.user_id ?? null;
+  }
+
+  getColor(username: string | null): string {
+    if (!username) return USER_COLORS[0];
+    return USER_COLORS[hashUsername(username)];
+  }
+
+  getBgColor(username: string | null): string {
+    if (!username) return USER_BG_COLORS[0];
+    return USER_BG_COLORS[hashUsername(username)];
+  }
+
+  getInitial(username: string | null): string {
+    if (!username) return '?';
+    return username.charAt(0).toUpperCase();
   }
 
   ngAfterViewChecked(): void {

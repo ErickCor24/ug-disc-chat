@@ -1,116 +1,159 @@
+/* login.component.scss — Glass / Messenger claro */
+
 .auth-container {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #1a1a2e;
+  padding: 1.5rem;
 }
 
 .auth-card {
-  background: #16213e;
-  border-radius: 12px;
-  padding: 2.5rem;
+  background: var(--color-surface);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.8);
+  padding: 2.75rem 2.5rem 2.25rem;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
 
-  h1 {
-    color: #e0e0e0;
-    margin: 0 0 0.25rem;
-    font-size: 1.75rem;
+  /* Reflejo interno tipo glass */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
   }
 
-  .subtitle {
-    color: #8899aa;
-    margin: 0 0 1.5rem;
-    font-size: 0.9rem;
+  .brand {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    .brand-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 0.5rem;
+      filter: drop-shadow(0 2px 8px rgba(99,102,241,0.3));
+    }
+
+    h1 {
+      color: var(--color-text);
+      margin: 0 0 0.3rem;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--color-text-muted);
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
   }
 }
 
 .error-banner {
-  background: rgba(220, 53, 69, 0.15);
-  border: 1px solid #dc3545;
-  border-radius: 6px;
-  color: #ff6b7a;
+  background: rgba(220, 53, 69, 0.08);
+  border: 1px solid rgba(220, 53, 69, 0.25);
+  border-radius: var(--radius-sm);
+  color: #dc2626;
   padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &::before { content: '⚠️'; }
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.1rem;
 
   label {
-    color: #aab;
-    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.4rem;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.45rem;
   }
 
   input {
-    background: #0f3460;
-    border: 1px solid #1a4a7a;
-    border-radius: 6px;
-    color: #e0e0e0;
-    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1.5px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-family: var(--font);
+    font-size: 1rem;
     outline: none;
-    padding: 0.65rem 0.9rem;
-    transition: border-color 0.2s;
+    padding: 0.75rem 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 
-    &::placeholder {
-      color: #556;
-    }
+    &::placeholder { color: var(--color-text-light); }
 
     &:focus {
-      border-color: #5865f2;
+      background: rgba(255, 255, 255, 0.85);
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px var(--color-accent-soft);
     }
   }
 
   .field-error {
-    color: #ff6b7a;
-    font-size: 0.78rem;
+    color: #dc2626;
+    font-size: 0.8rem;
     margin-top: 0.3rem;
   }
 }
 
-button[type='submit'] {
-  background: #5865f2;
+.submit-btn {
+  background: var(--color-accent);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   color: #fff;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-family: var(--font);
+  font-size: 1rem;
   font-weight: 600;
-  padding: 0.75rem;
-  transition: background 0.2s, opacity 0.2s;
+  letter-spacing: 0.01em;
+  margin-top: 0.5rem;
+  padding: 0.85rem;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
   width: 100%;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
 
   &:hover:not(:disabled) {
-    background: #4752c4;
+    background: var(--color-accent-hover);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    transform: translateY(-1px);
   }
+
+  &:active:not(:disabled) { transform: translateY(0); }
 
   &:disabled {
     cursor: not-allowed;
     opacity: 0.6;
+    box-shadow: none;
   }
 }
 
 .switch-auth {
-  color: #8899aa;
-  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
   margin-top: 1.5rem;
   text-align: center;
 
   a {
-    color: #5865f2;
+    color: var(--color-accent);
+    font-weight: 600;
     text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
+    &:hover { text-decoration: underline; }
   }
 }
