@@ -1,0 +1,106 @@
+:host {
+  display: flex;
+  height: 100vh;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+.sidebar {
+  background: #0d1117;
+  border-right: 1px solid #1f2937;
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  flex-shrink: 0;
+
+  .sidebar-header {
+    align-items: center;
+    border-bottom: 1px solid #1f2937;
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+      color: #e0e0e0;
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      color: #8899aa;
+      cursor: pointer;
+      font-size: 0.78rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: color 0.2s;
+
+      &:hover {
+        color: #ff6b7a;
+      }
+    }
+  }
+
+  .sidebar-channels {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+  }
+}
+
+.chat-area {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  .chat-header {
+    align-items: center;
+    background: #161b22;
+    border-bottom: 1px solid #1f2937;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.875rem 1.25rem;
+
+    .channel-hash {
+      color: #5865f2;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+    }
+  }
+
+  .no-channel {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.5rem;
+    justify-content: center;
+    color: #556;
+
+    .icon {
+      font-size: 3rem;
+    }
+
+    p {
+      font-size: 0.95rem;
+    }
+  }
+
+  .chat-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+}

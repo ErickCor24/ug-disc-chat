@@ -1,0 +1,161 @@
+import uuid
+
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from jose import JWTError
+
+from app.core.security import decode_token
+from app.db.base import AsyncSessionLocal
+from app.repositories.message_repository import MessageRepository
+from app.sockets.manager import manager
+
+router = APIRouter()
+
+
+async def _authenticate_ws(token: str) -> dict | None:
+    """
+    Valida el JWT recibido en el handshake WebSocket.
+    Retorna el payload si es válido, None si es inválido.
+    """
+    try:
+        payload = decode_token(token)
+        user_id: str | None = payload.get("sub")
+        username: str | None = payload.get("username")
+        if not user_id or not username:
+            return None
+        return {"user_id": user_id, "username": username}
+    except JWTError:
+        return None
+
+
+@router.websocket("/ws/{channel_id}")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    channel_id: str,
+    token: str = Query(..., description="JWT de autenticación"),
+):
+    """
+    Endpoint WebSocket principal.
+
+    Protocolo de eventos (JSON):
+    ─────────────────────────────────────────────────────────────
+    Cliente → Servidor:
+      { "type": "message",  "content": "..." }
+      { "type": "typing",   "is_typing": true|false }
+
+    Servidor → Cliente:
+      { "type": "history_batch", "messages": [...] }
+      { "type": "message",    id, channel_id, user_id, username, content, created_at }
+      { "type": "typing",     user_id, username, is_typing }
+      { "type": "user_joined", user_id, username }
+      { "type": "user_left",   user_id, username }
+    ─────────────────────────────────────────────────────────────
+    Códigos de cierre personalizados:
+      4001 — No autorizado (JWT inválido o ausente)
+      4002 — Canal inválido
+    """
+
+    # ── 1. Autenticación en el handshake (antes de accept) ────────────
+    user_data = await _authenticate_ws(token)
+    if not user_data:
+        await websocket.close(code=4001)
+        return
+
+    user_id = user_data["user_id"]
+    username = user_data["username"]
+
+    # Validar que el channel_id sea un UUID bien formado
+    try:
+        channel_uuid = uuid.UUID(channel_id)
+    except ValueError:
+        await websocket.close(code=4002)
+        return
+
+    # ── 2. Aceptar conexión y registrar en el manager ─────────────────
+    await websocket.accept()
+    manager.connect(channel_id, user_id, websocket)
+
+    # ── 3. Enviar historial de los últimos 20 mensajes ─────────────────
+    async with AsyncSessionLocal() as db:
+        repo = MessageRepository(db)
+        history = await repo.get_last_n_by_channel(channel_uuid, n=20)
+
+        history_payload = []
+        for m in history:
+            history_payload.append({
+                "id":         str(m.id),
+                "channel_id": str(m.channel_id),
+                "user_id":    str(m.user_id) if m.user_id else None,
+                "username":   m.user.username if m.user else "Usuario eliminado",
+                "content":    m.content,
+                "created_at": m.created_at.isoformat(),
+            })
+
+        await websocket.send_json({
+            "type":     "history_batch",
+            "messages": history_payload,
+        })
+
+    # ── 4. Notificar a los demás que un usuario entró ──────────────────
+    await manager.broadcast_to_channel(
+        channel_id,
+        {"type": "user_joined", "user_id": user_id, "username": username},
+        exclude_user_id=user_id,
+    )
+
+    # ── 5. Loop principal de recepción ─────────────────────────────────
+    try:
+        while True:
+            data: dict = await websocket.receive_json()
+            event_type: str = data.get("type", "")
+
+            if event_type == "message":
+                content = data.get("content", "").strip()
+                if not content:
+                    continue  # Ignorar mensajes vacíos
+
+                # Persistir en BD y hacer broadcast
+                async with AsyncSessionLocal() as db:
+                    repo = MessageRepository(db)
+                    msg = await repo.create(
+                        channel_id=channel_uuid,
+                        user_id=uuid.UUID(user_id),
+                        content=content,
+                    )
+                    await db.commit()
+
+                await manager.broadcast_to_channel(
+                    channel_id,
+                    {
+                        "type":       "message",
+                        "id":         str(msg.id),
+                        "channel_id": channel_id,
+                        "user_id":    user_id,
+                        "username":   username,
+                        "content":    msg.content,
+                        "created_at": msg.created_at.isoformat(),
+                    },
+                )
+
+            elif event_type == "typing":
+                # Solo broadcast — NO persistir, es un evento efímero
+                await manager.broadcast_to_channel(
+                    channel_id,
+                    {
+                        "type":      "typing",
+                        "user_id":   user_id,
+                        "username":  username,
+                        "is_typing": data.get("is_typing", True),
+                    },
+                    exclude_user_id=user_id,
+                )
+
+    except WebSocketDisconnect:
+        # ── 6. Limpieza al desconectar ─────────────────────────────────
+        manager.disconnect(channel_id, user_id)
+        await manager.broadcast_to_channel(
+            channel_id,
+            {"type": "user_left", "user_id": user_id, "username": username},
+        )
+    except Exception:
+        # Cualquier error inesperado — limpiar igualmente
+        manager.disconnect(channel_id, user_id)
