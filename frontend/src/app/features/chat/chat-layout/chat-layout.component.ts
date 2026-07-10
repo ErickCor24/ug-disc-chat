@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
 
 import { Channel } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
@@ -7,14 +7,28 @@ import { ChatService } from '../../../core/services/chat.service';
 import { ChannelListComponent } from '../channel-list/channel-list.component';
 import { MessageInputComponent } from '../message-input/message-input.component';
 import { MessageListComponent } from '../message-list/message-list.component';
+import { UserListComponent } from '../user-list/user-list.component';
 
 @Component({
   selector: 'app-chat-layout',
   standalone: true,
-  imports: [ChannelListComponent, MessageListComponent, MessageInputComponent],
+  imports: [ChannelListComponent, MessageListComponent, MessageInputComponent, UserListComponent],
   template: `
+    <!-- Hamburger button en móvil (solo visible <= 640px) -->
+    <button class="hamburger-btn"
+      (click)="toggleDrawer()"
+      [attr.aria-label]="sidebarOpen() ? 'Cerrar menú' : 'Abrir menú'"
+      [attr.aria-expanded]="sidebarOpen()">
+      <span class="hamburger-icon">☰</span>
+    </button>
+
+    <!-- Backdrop/scrim en móvil -->
+    @if (sidebarOpen()) {
+      <div class="drawer-backdrop" (click)="closeSidebar()"></div>
+    }
+
     <!-- Sidebar con lista de canales -->
-    <aside class="sidebar">
+    <aside class="sidebar" [class.open]="sidebarOpen()">
       <div class="sidebar-header">
         <div class="brand-name">
           <span class="brand-emoji">💬</span>
@@ -33,6 +47,8 @@ import { MessageListComponent } from '../message-list/message-list.component';
           (select)="onChannelSelect($event)"
         />
       </div>
+
+      <app-user-list [users]="chatService.connectedUsers()" />
     </aside>
 
     <!-- Área principal del chat -->
@@ -66,6 +82,8 @@ export class ChatLayoutComponent implements OnInit, OnDestroy {
 
   private readonly authService = inject(AuthService);
 
+  readonly sidebarOpen = signal(false);
+
   ngOnInit(): void {
     // Cargar canales al iniciar la vista
     this.channelService.loadChannels().subscribe({
@@ -83,10 +101,27 @@ export class ChatLayoutComponent implements OnInit, OnDestroy {
     this.chatService.disconnect();
     this.channelService.selectChannel(channel);
     this.chatService.connect(channel.id);
+    // Cerrar el drawer en móvil después de seleccionar un canal
+    this.closeSidebar();
   }
 
   logout(): void {
     this.chatService.disconnect();
     this.authService.logout();
+  }
+
+  toggleDrawer(): void {
+    this.sidebarOpen.update((open) => !open);
+  }
+
+  closeSidebar(): void {
+    this.sidebarOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.sidebarOpen()) {
+      this.closeSidebar();
+    }
   }
 }
