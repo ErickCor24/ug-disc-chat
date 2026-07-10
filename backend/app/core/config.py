@@ -13,6 +13,9 @@ class Settings(BaseSettings):
 
     # Base de Datos (asyncpg)
     DATABASE_URL: str
+    # Modo SSL de asyncpg. Neon/Render exigen "require"; Postgres local no
+    # acepta el upgrade de SSL, por lo que en desarrollo se usa "disable".
+    DB_SSL: str = "require"
 
     # CORS — lista explícita de orígenes permitidos
     ALLOWED_ORIGINS: list[str] = ["http://localhost:4200", "http://localhost:8050"]
