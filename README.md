@@ -17,7 +17,7 @@ Sistema de chat en tiempo real con canales temáticos, autenticación JWT y WebS
 |---|---|
 | [Manual técnico](docs/manual-tecnico.md) | Arquitectura, protocolo WebSocket, instalación y despliegue |
 | [Manual de usuario](docs/manual-usuario.md) | Guía de uso de la aplicación |
-| [Plan de pruebas](docs/plan-de-pruebas.md) | Estrategia, alcance y resultados de las 82 pruebas |
+| [Plan de pruebas](docs/plan-de-pruebas.md) | Estrategia, alcance y resultados de las 84 pruebas |
 | [Guion de sustentación](docs/guion-sustentacion.md) | Estructura de la exposición oral |
 
 ---
@@ -25,7 +25,7 @@ Sistema de chat en tiempo real con canales temáticos, autenticación JWT y WebS
 ## Setup Local
 
 ### 1. Base de Datos
-Ejecutar `supabase_schema.sql` contra la base de datos. Crea las tablas, el índice de
+Ejecutar `schema.sql` contra la base de datos. Crea las tablas, el índice de
 historial y los tres canales iniciales.
 
 ### 2. Backend
@@ -61,7 +61,7 @@ ng serve
 
 | Variable | Descripción |
 |----------|-------------|
-| `JWT_SECRET_KEY` | Clave secreta para firmar JWTs (mín. 32 chars) |
+| `JWT_SECRET_KEY` | Clave secreta para firmar JWTs (se recomienda al menos 32 caracteres) |
 | `DATABASE_URL` | `postgresql+asyncpg://user:pass@host/db` |
 | `ALLOWED_ORIGINS` | JSON array de orígenes CORS permitidos |
 | `DEBUG` | `True` en desarrollo, `False` en producción |
@@ -121,7 +121,7 @@ python -m pytest tests -q
 │           ├── auth/      # login, register
 │           └── chat/      # layout, channel-list, message-list, input
 │
-└── supabase_schema.sql
+└── schema.sql
 ```
 
 ## Protocolo WebSocket
@@ -139,4 +139,5 @@ Conexión: `ws://host/ws/{channel_id}?token=<JWT>`
 
 Códigos de cierre WebSocket:
 - `4001` — JWT inválido o expirado
-- `4002` — Channel ID inválido
+- `4002` — Channel ID inválido (no es un UUID válido)
+- `4004` — Canal inexistente (UUID válido pero no existe en la BD)

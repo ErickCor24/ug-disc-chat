@@ -1,7 +1,8 @@
 stateDiagram-v2
-    state "Autenticando" as auth
+    state "Autenticando y validando" as auth
     state "Rechazada — 4001" as r4001
     state "Rechazada — 4002" as r4002
+    state "Rechazada — 4004" as r4004
     state "Aceptada" as acc
     state "Sincronizando" as sync
     state "Activa" as act
@@ -12,17 +13,18 @@ stateDiagram-v2
 
     auth --> r4001: JWT invalido o ausente
     auth --> r4002: channel_id no es UUID
-    auth --> acc: Token valido
+    auth --> r4004: Canal inexistente en la BD
+    auth --> acc: Token valido y canal existente
 
-    acc --> sync: accept() y registro
-    sync --> act: history_batch, user_joined, user_list
+    acc --> sync: accept()
+    sync --> act: history_batch, connect, user_joined, user_list
 
     act --> close: Cierre o excepcion
-    close --> act: Quedan sockets abiertos
-    close --> off: Sin sockets — user_left, user_list
+    close --> off: Conexion cerrada
 
     r4001 --> [*]
     r4002 --> [*]
+    r4004 --> [*]
     off --> [*]
 
     note right of act
@@ -30,7 +32,11 @@ stateDiagram-v2
     end note
 
     note right of close
-        La limpieza vive en un bloque finally,
-        para que una excepcion inesperada
-        no deje usuarios fantasma en el roster.
+        La limpieza vive en un bloque finally. Este
+        diagrama describe UNA conexion: al cerrarse
+        siempre pasa a Desconectada. user_left y
+        user_list se emiten solo si era la ultima
+        conexion del usuario; si quedan otras
+        conexiones abiertas, el usuario permanece
+        en el roster.
     end note

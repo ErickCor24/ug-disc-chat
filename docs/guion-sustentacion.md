@@ -1,6 +1,6 @@
 # Guion de sustentación
 
-Duración prevista: 15 minutos de exposición y 5 de preguntas. Cada bloque lo presenta un integrante distinto, que defiende la parte que desarrolló.
+Duración prevista: 17 minutos de exposición y 5 de preguntas. Cada bloque lo presenta un integrante distinto, que defiende la parte que desarrolló.
 
 ## Preparación previa
 
@@ -33,7 +33,7 @@ Duración prevista: 15 minutos de exposición y 5 de preguntas. Cada bloque lo p
 2. Cómo viaja el token: cabecera `Authorization` en las peticiones HTTP; parámetro de consulta en la URL del WebSocket, porque el WebSocket del navegador no admite cabeceras propias.
 3. Recorrer el protocolo de eventos con el diagrama de secuencia: `history_batch` al entrar, `message`, `typing`, `user_joined`, `user_left` y `user_list`.
 4. Señalar por qué `user_list` es la única fuente de verdad de la lista de conectados: un cliente que se conecta tarde nunca vio las entradas anteriores, de modo que no puede reconstruir la lista a partir de `user_joined`.
-5. Códigos de cierre propios: `4001` para token inválido, `4002` para canal inexistente.
+5. Códigos de cierre propios: `4001` para token inválido, `4002` para UUID inválido del canal, `4004` para canal inexistente (UUID válido pero no existe en la BD).
 
 ## Bloque 4 — Demostración en vivo (3 min)
 
@@ -52,7 +52,7 @@ Si el enlace público falla, continuar con la instancia local ya arrancada.
 ## Bloque 5 — Despliegue, pruebas y cierre (2 min)
 
 1. **Proceso de despliegue.** El despliegue es continuo: cada integración en `main` publica una versión nueva. El servidor se construye desde un Dockerfile de dos etapas, de modo que los compiladores no llegan a la imagen final, y Render comprueba que está vivo mediante la sonda `/health`. El cliente se compila y se publica como archivos estáticos en Vercel. Las credenciales viven en el panel de cada servicio, nunca en el repositorio.
-2. 82 pruebas automatizadas: 46 unitarias del servidor, 27 del cliente y 9 de extremo a extremo sobre dos navegadores reales.
+2. 84 pruebas automatizadas: 46 unitarias del servidor, 29 del cliente y 9 de extremo a extremo sobre dos navegadores reales.
 3. Explicar que se verificó que las pruebas fallan cuando se retira el código que verifican: una prueba que nunca falla no demuestra nada.
 4. Cerrar con las limitaciones conocidas, admitidas de forma explícita: sin reconexión automática, sin gestión de la expiración del token en el cliente, y presencia limitada a un solo proceso del servidor.
 

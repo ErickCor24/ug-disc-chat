@@ -7,9 +7,9 @@ Las pruebas se reparten en tres niveles, cada uno con un propósito distinto:
 | Nivel | Herramienta | Qué verifica | Cantidad |
 |---|---|---|---|
 | Unitarias del servidor | pytest | Lógica de presencia y de seguridad, aislada de la red y de la base de datos | 46 |
-| Unitarias del cliente | Vitest | Estado de los componentes y su representación en pantalla | 27 |
+| Unitarias del cliente | Vitest | Estado de los componentes y su representación en pantalla | 29 |
 | Extremo a extremo | Playwright | Recorridos completos sobre el sistema real, con navegadores y servidor en marcha | 9 |
-| | | **Total** | **82** |
+| | | **Total** | **84** |
 
 El reparto responde al coste de cada nivel. La lógica de presencia concentra la mayoría de los casos límite del sistema y es barata de probar en aislamiento, de ahí el peso de las pruebas unitarias. Las pruebas de extremo a extremo son lentas y frágiles, y se reservan para lo que ningún otro nivel puede demostrar: que dos navegadores distintos se vean en tiempo real.
 
@@ -36,7 +36,7 @@ El reparto responde al coste de cada nivel. La lógica de presencia concentra la
 - El token transporta el identificador y el nombre de usuario, y lleva marca de expiración.
 - Un token manipulado, firmado con otra clave o con otro algoritmo, es rechazado.
 
-### 2.2 Cliente — 27 pruebas
+### 2.2 Cliente — 29 pruebas
 
 - **Lista de usuarios conectados (11).** Contador de la cabecera con cero, uno y varios usuarios; presentación de cada entrada; inicial y color del avatar derivados del nombre.
 - **Disposición del chat (15).** Carga inicial de canales; apertura y cierre del menú lateral por botón, por tecla `Escape` y al seleccionar un canal; orden correcto de las operaciones al cambiar de canal (desconectar, seleccionar, conectar); cierre de la conexión al abandonar la vista y al cerrar sesión.
@@ -60,11 +60,11 @@ Ejecución completa sobre la rama de trabajo:
 
 ```
 backend   python -m pytest tests -q      46 passed
-frontend  npm test                       27 passed
+frontend  npm test                       29 passed
 frontend  npx playwright test             9 passed
 ```
 
-Las 82 pruebas pasan. Las de extremo a extremo requieren el servidor en `localhost:8000` con la base de datos poblada; Playwright levanta por su cuenta el servidor del cliente.
+Las 84 pruebas pasan. Las de extremo a extremo requieren el servidor en `localhost:8000` con la base de datos poblada; Playwright levanta por su cuenta el servidor del cliente.
 
 ## 4. Validación de que las pruebas detectan fallos
 

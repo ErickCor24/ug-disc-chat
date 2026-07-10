@@ -26,7 +26,7 @@ Complete los tres campos:
 | Email | Un correo con formato válido. Se usa para iniciar sesión |
 | Contraseña | Al menos 8 caracteres |
 
-Pulse **Crear Cuenta**. Si algún dato no cumple el requisito, el mensaje aparece bajo el campo correspondiente y el botón permanece inactivo. Si el correo ya pertenece a otra cuenta, se muestra el aviso **El email ya está registrado**.
+Pulse **Crear Cuenta**. Si algún dato no cumple el requisito, el mensaje aparece bajo el campo correspondiente y el botón permanece inactivo. Si el correo ya pertenece a otra cuenta, se muestra el aviso **El email ya está registrado**. Si el nombre de usuario está en uso, aparece **El nombre de usuario ya esta registrado**.
 
 Al completarse el registro, la sesión se inicia automáticamente y se entra al chat.
 
@@ -36,7 +36,7 @@ Al completarse el registro, la sesión se inicia automáticamente y se entra al 
 
 El acceso se realiza con **correo electrónico y contraseña**, no con el nombre de usuario.
 
-Si los datos no coinciden, aparece el mensaje **Credenciales incorrectas**. Por seguridad, el aviso es el mismo tanto si el correo no existe como si la contraseña es incorrecta.
+Si los datos no coinciden, aparece el mensaje **Credenciales incorrectas**. El aviso genérico evita revelar de forma explícita si una cuenta existe o no.
 
 La sesión permanece abierta durante 24 horas, incluso si cierra el navegador. Transcurrido ese plazo debe volver a identificarse.
 
@@ -95,7 +95,7 @@ En pantallas estrechas la lista de canales y de usuarios se oculta para dar espa
 
 | Menú cerrado | Menú abierto |
 |---|---|
-| ![Vista móvil con el menú cerrado](capturas/07-movil-drawer-cerrado.png) | ![Vista móvil con el menú abierto](capturas/08-movil-drawer-abierto.png) |
+| ![Vista móvil con el menú cerrado](capturas/07-movil-drawer-cerrado.png){width=7cm} | ![Vista móvil con el menú abierto](capturas/08-movil-drawer-abierto.png){width=7cm} |
 
 El menú se cierra al elegir un canal, al pulsar fuera de él o con la tecla `Escape`.
 

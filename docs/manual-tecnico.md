@@ -109,7 +109,7 @@ ug-disc-chat/
 │   ├── e2e/                    Pruebas de extremo a extremo
 │   └── src/environments/       Direcciones del servidor por entorno
 ├── docs/                       Manuales, diagramas y plan de pruebas
-└── supabase_schema.sql         Esquema y datos iniciales de la base
+└── schema.sql                  Esquema y datos iniciales de la base
 ```
 
 ## 5. Instalación y configuración
@@ -122,7 +122,7 @@ ug-disc-chat/
 
 ### 5.2 Base de datos
 
-Ejecutar `supabase_schema.sql` contra la base de datos. El script crea las tablas `users`, `channels` y `messages`, el índice de historial e inserta los tres canales iniciales (`general`, `tech`, `off-topic`). Es idempotente: puede ejecutarse más de una vez sin duplicar los canales. El nombre del archivo conserva el del proveedor con el que se desarrolló al inicio; el SQL es estándar y no depende de ninguno.
+Ejecutar `schema.sql` contra la base de datos. El script crea las tablas `users`, `channels` y `messages`, el índice de historial e inserta los tres canales iniciales (`general`, `tech`, `off-topic`). Es idempotente: puede ejecutarse más de una vez sin duplicar los canales.
 
 El proyecto no incorpora una herramienta de migraciones. Todo cambio de esquema se aplica ejecutando el script a mano.
 
@@ -140,10 +140,10 @@ Variables de entorno:
 
 | Variable | Obligatoria | Valor por defecto | Descripción |
 |---|---|---|---|
-| `JWT_SECRET_KEY` | Sí | — | Clave de firma de los tokens. Mínimo 32 caracteres |
+| `JWT_SECRET_KEY` | Sí | — | Clave de firma de los tokens. Se recomienda una clave robusta de al menos 32 caracteres |
 | `DATABASE_URL` | Sí | — | Cadena de conexión con el formato `postgresql+asyncpg://usuario:clave@host:puerto/base` |
 | `DB_SSL` | No | `require` | Modo TLS de asyncpg. Los PostgreSQL gestionados exigen `require`; una instancia local no negocia TLS y necesita `disable` |
-| `ALLOWED_ORIGINS` | No | `["http://localhost:4200", "http://localhost:8050"]` | Lista de orígenes autorizados por CORS |
+| `ALLOWED_ORIGINS` | No | `["http://localhost:4200"]` | Lista de orígenes autorizados por CORS |
 | `JWT_ALGORITHM` | No | `HS256` | Algoritmo de firma |
 | `JWT_EXPIRE_MINUTES` | No | `1440` | Vigencia del token, en minutos |
 | `DEBUG` | No | `False` | Registra en consola las sentencias SQL |
@@ -197,7 +197,7 @@ Con una base de datos local, `DB_SSL` debe valer `disable`; en caso contrario el
 | `GET` | `/api/v1/channels/` | — | Lista de canales | 200 | Sí |
 | `GET` | `/health` | — | `status`, `app` | 200 | No |
 
-Errores relevantes: `409` si el correo ya está registrado; `401` ante credenciales incorrectas o token inválido o expirado.
+Errores relevantes: `409` si el correo o el nombre de usuario ya están registrados; `401` ante credenciales incorrectas o token inválido o expirado.
 
 ### 7.2 Autenticación
 
@@ -207,7 +207,7 @@ Las contraseñas nunca se almacenan ni se transmiten en claro hacia la base de d
 
 El servidor emite un JWT firmado con HS256 que contiene el identificador del usuario (`sub`), su nombre y la marca de expiración (`exp`), con una vigencia de 24 horas. El servidor no guarda sesiones: cada petición se valida con la firma del token.
 
-Ante credenciales incorrectas la respuesta es siempre la misma (`401`, «Credenciales incorrectas»), sin distinguir si el fallo fue el correo o la contraseña. Así no se revela qué correos existen en el sistema.
+Ante credenciales incorrectas la respuesta es siempre la misma (`401`, «Credenciales incorrectas»), sin distinguir si el fallo fue el correo o la contraseña. La respuesta genérica evita revelar de forma explícita qué correos existen en el sistema, aunque una diferencia de tiempo en la ejecución de `bcrypt` podría permitir enumerar cuentas mediante análisis fino.
 
 ### 7.3 Integridad y seguridad de los datos transmitidos
 
@@ -255,6 +255,7 @@ El servidor valida el token y el identificador del canal **antes** de aceptar el
 |---|---|
 | `4001` | Token ausente, inválido o expirado |
 | `4002` | El identificador de canal no es un UUID válido |
+| `4004` | Canal inexistente (UUID válido pero el canal no existe en la BD) |
 
 Una vez aceptada la conexión, el servidor envía al recién llegado los últimos 20 mensajes del canal (`history_batch`), anuncia su entrada a los demás (`user_joined`) y difunde la lista completa de conectados a todo el canal (`user_list`).
 
@@ -310,11 +311,11 @@ El índice `(channel_id, created_at DESC)` sostiene la única consulta caliente 
 
 ## 11. Pruebas
 
-El proyecto tiene 82 pruebas automatizadas: 46 unitarias del servidor, 27 unitarias del cliente y 9 de extremo a extremo sobre dos navegadores reales. El alcance, la estrategia y los resultados se detallan en [`plan-de-pruebas.md`](plan-de-pruebas.md).
+El proyecto tiene 84 pruebas automatizadas: 46 unitarias del servidor, 29 unitarias del cliente y 9 de extremo a extremo sobre dos navegadores reales. El alcance, la estrategia y los resultados se detallan en [`plan-de-pruebas.md`](plan-de-pruebas.md).
 
 ```bash
 cd backend  && python -m pytest tests -q      # 46
-cd frontend && npm test                       # 27
+cd frontend && npm test                       # 29
 cd frontend && npx playwright test            # 9, requiere servidor y base de datos
 ```
 

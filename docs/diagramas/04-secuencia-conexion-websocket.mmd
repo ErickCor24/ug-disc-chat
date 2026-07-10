@@ -16,18 +16,27 @@ sequenceDiagram
     else channel_id no es un UUID valido
         H-->>A: close(4002)
     else Credenciales validas
-        H->>A: accept()
-        H->>M: connect(channel_id, user_id, ws)
-        M-->>H: is_first_connection = true
+        H->>DB: SELECT canal por id
+        DB-->>H: Canal
 
-        H->>DB: SELECT ultimos 20 mensajes del canal
-        DB-->>H: Historial
-        H-->>A: history_batch { messages[] }
+        alt El canal no existe en la BD
+            H-->>A: close(4004)
+        else El canal existe
+            H->>A: accept()
 
-        H-->>B: user_joined { user_id, username }
-        Note right of H: Solo en la primera conexion del usuario.<br/>Excluye a quien entra.
+            H->>DB: SELECT ultimos 20 mensajes del canal
+            DB-->>H: Historial
+            H-->>A: history_batch { messages[] }
+            Note right of H: El historial se envia ANTES de registrar<br/>el socket en el roster, para no perder<br/>un mensaje en vivo llegado en el intervalo.
 
-        H-->>A: user_list { users[] }
-        H-->>B: user_list { users[] }
-        Note right of H: Roster completo, a todo el canal.<br/>Es la unica fuente de verdad<br/>de la lista de conectados.
+            H->>M: connect(channel_id, user_id, username, ws)
+            M-->>H: is_first_connection = true
+
+            H-->>B: user_joined { user_id, username }
+            Note right of H: Solo en la primera conexion del usuario.<br/>Excluye a quien entra.
+
+            H-->>A: user_list { users[] }
+            H-->>B: user_list { users[] }
+            Note right of H: Roster completo, a todo el canal.<br/>Es la unica fuente de verdad<br/>de la lista de conectados.
+        end
     end
