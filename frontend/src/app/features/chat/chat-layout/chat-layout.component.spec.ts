@@ -7,6 +7,8 @@ import { Channel, Message } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { ChannelService } from '../../../core/services/channel.service';
 import { ChatService } from '../../../core/services/chat.service';
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { LogoComponent } from '../../../shared/ui/logo.component';
 import { ChatLayoutComponent } from './chat-layout.component';
 
 @Component({
@@ -89,6 +91,8 @@ describe('ChatLayoutComponent', () => {
             StubMessageListComponent,
             StubMessageInputComponent,
             StubUserListComponent,
+            IconComponent,
+            LogoComponent,
           ],
         },
       })

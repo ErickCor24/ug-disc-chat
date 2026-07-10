@@ -4,6 +4,8 @@ import { Channel } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { ChannelService } from '../../../core/services/channel.service';
 import { ChatService } from '../../../core/services/chat.service';
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { LogoComponent } from '../../../shared/ui/logo.component';
 import { ChannelListComponent } from '../channel-list/channel-list.component';
 import { MessageInputComponent } from '../message-input/message-input.component';
 import { MessageListComponent } from '../message-list/message-list.component';
@@ -12,13 +14,20 @@ import { UserListComponent } from '../user-list/user-list.component';
 @Component({
   selector: 'app-chat-layout',
   standalone: true,
-  imports: [ChannelListComponent, MessageListComponent, MessageInputComponent, UserListComponent],
+  imports: [
+    ChannelListComponent,
+    MessageListComponent,
+    MessageInputComponent,
+    UserListComponent,
+    IconComponent,
+    LogoComponent,
+  ],
   template: `
     <button class="hamburger-btn"
       (click)="toggleDrawer()"
       [attr.aria-label]="sidebarOpen() ? 'Cerrar menú' : 'Abrir menú'"
       [attr.aria-expanded]="sidebarOpen()">
-      <span class="hamburger-icon">☰</span>
+      <app-icon class="hamburger-icon" name="menu" />
     </button>
 
     @if (sidebarOpen()) {
@@ -29,11 +38,11 @@ import { UserListComponent } from '../user-list/user-list.component';
     <aside class="sidebar" [class.open]="sidebarOpen()">
       <div class="sidebar-header">
         <div class="brand-name">
-          <span class="brand-emoji">💬</span>
+          <app-logo class="brand-logo" />
           <h2>ChatApp</h2>
         </div>
         <button class="logout-btn" (click)="logout()" aria-label="Cerrar sesión">
-          <span class="logout-icon">⎋</span>
+          <app-icon class="logout-icon" name="logout" />
           Salir
         </button>
       </div>
@@ -66,7 +75,7 @@ import { UserListComponent } from '../user-list/user-list.component';
         </div>
       } @else {
         <div class="no-channel">
-          <span class="icon">💬</span>
+          <app-icon class="icon" name="chat-bubble" />
           <p>Selecciona un canal para empezar a chatear</p>
         </div>
       }

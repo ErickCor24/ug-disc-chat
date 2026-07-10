@@ -2,11 +2,12 @@ import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ChatService } from '../../../core/services/chat.service';
+import { IconComponent } from '../../../shared/ui/icon.component';
 
 @Component({
   selector: 'app-message-input',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   template: `
     <!-- Indicador "está escribiendo..." -->
     @if (typingUsers().length > 0) {
@@ -38,7 +39,7 @@ import { ChatService } from '../../../core/services/chat.service';
         [disabled]="!messageText.trim() || !connected()"
         aria-label="Enviar mensaje"
       >
-        <span class="send-icon">↑</span>
+        <app-icon class="send-icon" name="send" />
       </button>
     </form>
   `,
@@ -134,9 +135,7 @@ import { ChatService } from '../../../core/services/chat.service';
       flex-shrink: 0;
 
       .send-icon {
-        font-size: 1.1rem;
-        font-weight: 700;
-        line-height: 1;
+        font-size: 1.15rem;
       }
 
       &:hover:not(:disabled) {

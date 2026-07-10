@@ -10,17 +10,18 @@ import {
 import { Message } from '../../../core/models';
 import { DateFormatPipe } from '../../../core/pipes/date-format.pipe';
 import { AuthService } from '../../../core/services/auth.service';
+import { IconComponent } from '../../../shared/ui/icon.component';
 import { getAvatarColor, getAvatarBgColor, getAvatarInitial } from '../../../shared/utils/avatar.util';
 
 @Component({
   selector: 'app-message-list',
   standalone: true,
-  imports: [DateFormatPipe],
+  imports: [DateFormatPipe, IconComponent],
   template: `
     <div class="message-list" #scrollContainer>
       @if (messages().length === 0) {
         <div class="empty-state">
-          <span class="empty-icon">🫧</span>
+          <app-icon class="empty-icon" name="chat-bubble" />
           <p>No hay mensajes aún.</p>
           <span class="empty-sub">¡Sé el primero en escribir!</span>
         </div>
@@ -97,7 +98,7 @@ import { getAvatarColor, getAvatarBgColor, getAvatarInitial } from '../../../sha
       color: var(--color-text-muted);
       text-align: center;
 
-      .empty-icon { font-size: 2.5rem; }
+      .empty-icon { font-size: 2.5rem; color: var(--color-text-light); }
       p { margin: 0; font-size: 1rem; font-weight: 500; }
       .empty-sub { font-size: 0.875rem; color: var(--color-text-light); }
     }
