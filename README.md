@@ -52,6 +52,15 @@ ng serve
 | `DATABASE_URL` | `postgresql+asyncpg://user:pass@host/db` |
 | `ALLOWED_ORIGINS` | JSON array de orígenes CORS permitidos |
 | `DEBUG` | `True` en desarrollo, `False` en producción |
+| `DB_SSL` | `require` en producción (Neon). `disable` para un Postgres local |
+
+### Pruebas del backend
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+python -m pytest tests -q
+```
 
 ---
 

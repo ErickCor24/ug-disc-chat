@@ -10,48 +10,18 @@ import {
 import { Message } from '../../../core/models';
 import { DateFormatPipe } from '../../../core/pipes/date-format.pipe';
 import { AuthService } from '../../../core/services/auth.service';
-
-/** Paleta de 8 colores para asignar a usuarios por hash del username */
-const USER_COLORS = [
-  '#e05c5c', // rojo
-  '#d97706', // ámbar
-  '#059669', // esmeralda
-  '#7c3aed', // violeta
-  '#db2777', // rosa
-  '#0891b2', // cian
-  '#65a30d', // lima
-  '#c2410c', // naranja
-];
-
-/** Fondo suave correspondiente a cada color */
-const USER_BG_COLORS = [
-  'rgba(224,92,92,0.10)',
-  'rgba(217,119,6,0.10)',
-  'rgba(5,150,105,0.10)',
-  'rgba(124,58,237,0.10)',
-  'rgba(219,39,119,0.10)',
-  'rgba(8,145,178,0.10)',
-  'rgba(101,163,13,0.10)',
-  'rgba(194,65,12,0.10)',
-];
-
-function hashUsername(username: string): number {
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) {
-    hash = (hash * 31 + username.charCodeAt(i)) >>> 0;
-  }
-  return hash % USER_COLORS.length;
-}
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { getAvatarColor, getAvatarBgColor, getAvatarInitial } from '../../../shared/utils/avatar.util';
 
 @Component({
   selector: 'app-message-list',
   standalone: true,
-  imports: [DateFormatPipe],
+  imports: [DateFormatPipe, IconComponent],
   template: `
     <div class="message-list" #scrollContainer>
       @if (messages().length === 0) {
         <div class="empty-state">
-          <span class="empty-icon">🫧</span>
+          <app-icon class="empty-icon" name="chat-bubble" />
           <p>No hay mensajes aún.</p>
           <span class="empty-sub">¡Sé el primero en escribir!</span>
         </div>
@@ -128,7 +98,7 @@ function hashUsername(username: string): number {
       color: var(--color-text-muted);
       text-align: center;
 
-      .empty-icon { font-size: 2.5rem; }
+      .empty-icon { font-size: 2.5rem; color: var(--color-text-light); }
       p { margin: 0; font-size: 1rem; font-weight: 500; }
       .empty-sub { font-size: 0.875rem; color: var(--color-text-light); }
     }
@@ -233,18 +203,15 @@ export class MessageListComponent implements AfterViewChecked {
   }
 
   getColor(username: string | null): string {
-    if (!username) return USER_COLORS[0];
-    return USER_COLORS[hashUsername(username)];
+    return getAvatarColor(username);
   }
 
   getBgColor(username: string | null): string {
-    if (!username) return USER_BG_COLORS[0];
-    return USER_BG_COLORS[hashUsername(username)];
+    return getAvatarBgColor(username);
   }
 
   getInitial(username: string | null): string {
-    if (!username) return '?';
-    return username.charAt(0).toUpperCase();
+    return getAvatarInitial(username);
   }
 
   ngAfterViewChecked(): void {

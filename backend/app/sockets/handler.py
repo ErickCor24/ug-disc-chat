@@ -46,8 +46,13 @@ async def websocket_endpoint(
       { "type": "history_batch", "messages": [...] }
       { "type": "message",    id, channel_id, user_id, username, content, created_at }
       { "type": "typing",     user_id, username, is_typing }
+      { "type": "user_list",   users: [{user_id, username}, ...] }
       { "type": "user_joined", user_id, username }
       { "type": "user_left",   user_id, username }
+
+    `user_list` es la fuente de verdad de la lista de usuarios conectados: se
+    envía al entrar y se reemite al canal cada vez que alguien entra o sale.
+    `user_joined` / `user_left` se conservan como notificaciones puntuales.
     ─────────────────────────────────────────────────────────────
     Códigos de cierre personalizados:
       4001 — No autorizado (JWT inválido o ausente)
@@ -72,7 +77,7 @@ async def websocket_endpoint(
 
     # ── 2. Aceptar conexión y registrar en el manager ─────────────────
     await websocket.accept()
-    manager.connect(channel_id, user_id, websocket)
+    is_first_connection = manager.connect(channel_id, user_id, username, websocket)
 
     # ── 3. Enviar historial de los últimos 20 mensajes ─────────────────
     async with AsyncSessionLocal() as db:
@@ -95,11 +100,18 @@ async def websocket_endpoint(
             "messages": history_payload,
         })
 
-    # ── 4. Notificar a los demás que un usuario entró ──────────────────
+    # ── 4. Presencia: enviar el roster actual y notificar la entrada ───
+    # El roster se emite a TODO el canal (incluido quien entra) para que la
+    # lista de conectados sea idéntica en todos los clientes.
+    if is_first_connection:
+        await manager.broadcast_to_channel(
+            channel_id,
+            {"type": "user_joined", "user_id": user_id, "username": username},
+            exclude_user_id=user_id,
+        )
     await manager.broadcast_to_channel(
         channel_id,
-        {"type": "user_joined", "user_id": user_id, "username": username},
-        exclude_user_id=user_id,
+        {"type": "user_list", "users": manager.get_roster(channel_id)},
     )
 
     # ── 5. Loop principal de recepción ─────────────────────────────────
@@ -150,12 +162,20 @@ async def websocket_endpoint(
                 )
 
     except WebSocketDisconnect:
-        # ── 6. Limpieza al desconectar ─────────────────────────────────
-        manager.disconnect(channel_id, user_id)
-        await manager.broadcast_to_channel(
-            channel_id,
-            {"type": "user_left", "user_id": user_id, "username": username},
-        )
+        pass
     except Exception:
-        # Cualquier error inesperado — limpiar igualmente
-        manager.disconnect(channel_id, user_id)
+        pass
+    finally:
+        # ── 6. Limpieza al desconectar ─────────────────────────────────
+        # Se ejecuta siempre, también ante errores inesperados: de lo
+        # contrario el usuario quedaría "fantasma" en la lista de conectados.
+        user_left = manager.disconnect(channel_id, user_id, websocket)
+        if user_left:
+            await manager.broadcast_to_channel(
+                channel_id,
+                {"type": "user_left", "user_id": user_id, "username": username},
+            )
+            await manager.broadcast_to_channel(
+                channel_id,
+                {"type": "user_list", "users": manager.get_roster(channel_id)},
+            )

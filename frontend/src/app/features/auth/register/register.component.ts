@@ -3,22 +3,27 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { IconComponent } from '../../../shared/ui/icon.component';
+import { LogoComponent } from '../../../shared/ui/logo.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, IconComponent, LogoComponent],
   template: `
     <div class="auth-container">
       <div class="auth-card">
         <div class="brand">
-          <span class="brand-icon">✨</span>
+          <app-logo class="brand-icon" />
           <h1>Crear Cuenta</h1>
           <p class="subtitle">Únete a la comunidad</p>
         </div>
 
         @if (errorMessage()) {
-          <div class="error-banner">{{ errorMessage() }}</div>
+          <div class="error-banner" role="alert">
+            <app-icon name="warning" />
+            <span>{{ errorMessage() }}</span>
+          </div>
         }
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()">

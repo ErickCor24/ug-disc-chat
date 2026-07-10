@@ -1,11 +1,29 @@
 /* chat-layout.component.scss — Glass / Messenger claro */
 
+// En movil el boton hamburguesa flota sobre la cabecera. El gutter se deriva
+// de su geometria para que reservar el espacio no dependa de un valor
+// duplicado a mano en cada cabecera.
+$hamburger-size: 44px;
+$hamburger-inset: 8px;
+$hamburger-gutter: $hamburger-inset + $hamburger-size + 12px;
+
 :host {
   display: flex;
   width: 100%;
   height: 100vh;
   overflow: hidden;
   font-family: var(--font);
+  position: relative;
+}
+
+// ── Botón hamburguesa (solo móvil) ─────────────────────────────────
+.hamburger-btn {
+  display: none;
+}
+
+// ── Backdrop/scrim para el drawer ──────────────────────────────────
+.drawer-backdrop {
+  display: none;
 }
 
 // ── Sidebar ─────────────────────────────────────────────────────
@@ -38,7 +56,7 @@
       align-items: center;
       gap: 0.5rem;
 
-      .brand-emoji { font-size: 1.3rem; }
+      .brand-logo { font-size: 1.3rem; }
 
       h2 {
         font-size: 1.05rem;
@@ -155,16 +173,91 @@
 
 // ── Responsive mobile ────────────────────────────────────────────
 @media (max-width: 640px) {
-  :host { flex-direction: column; }
+  // Mostrar hamburguesa en móvil
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: $hamburger-inset;
+    left: $hamburger-inset;
+    z-index: 100;
+    background: var(--color-surface);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    width: $hamburger-size;
+    height: $hamburger-size;
+    padding: 0;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    box-shadow: var(--shadow-sm);
 
-  .sidebar {
-    width: 100%;
-    min-width: 0;
-    height: auto;
-    max-height: 38vh;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
+    .hamburger-icon {
+      font-size: 1.25rem;
+      color: var(--color-text);
+    }
+
+    &:hover {
+      background: rgba(99, 102, 241, 0.07);
+      transform: scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
   }
 
-  .chat-area { flex: 1; min-height: 0; }
+  // Mostrar backdrop cuando drawer está abierto
+  .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 30;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  // Sidebar como drawer en móvil
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 40;
+
+    // Respetar prefers-reduced-motion
+    @media (prefers-reduced-motion: reduce) {
+      transition: transform 0.01s;
+    }
+
+    .sidebar-header {
+      padding-left: $hamburger-gutter;
+    }
+
+    &.open {
+      transform: translateX(0);
+    }
+  }
+
+  .chat-area {
+    min-height: 0;
+
+    // Debe anidarse bajo .chat-area: el `padding` en corto de la regla base
+    // gana por especificidad a un `padding-left` suelto y el boton tapaba
+    // el nombre del canal.
+    .chat-header {
+      padding-left: $hamburger-gutter;
+    }
+  }
 }
