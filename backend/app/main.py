@@ -34,5 +34,5 @@ app.include_router(handler.router)
 
 @app.get("/health", tags=["status"])
 async def health_check() -> dict:
-    """Endpoint de salud para Railway y monitoreo."""
+    """Endpoint de salud para Render y monitoreo."""
     return {"status": "ok", "app": settings.APP_NAME}

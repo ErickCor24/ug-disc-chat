@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # Aplicación
-    APP_NAME: str = "Discord Clone API"
+    APP_NAME: str = "ChatApp"
     DEBUG: bool = False
 
     # JWT
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     DB_SSL: str = "require"
 
     # CORS — lista explícita de orígenes permitidos
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:4200", "http://localhost:8050"]
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:4200"]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

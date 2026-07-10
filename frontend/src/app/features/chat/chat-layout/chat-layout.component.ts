@@ -60,6 +60,13 @@ import { UserListComponent } from '../user-list/user-list.component';
 
     <!-- Área principal del chat -->
     <main class="chat-area">
+      @if (chatService.wsError(); as wsError) {
+        <div class="ws-error-banner" role="alert">
+          <app-icon name="warning" />
+          <span>{{ wsError }}</span>
+        </div>
+      }
+
       @if (channelService.selectedChannel(); as channel) {
         <header class="chat-header">
           <span class="channel-hash">#</span>

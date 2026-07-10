@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { LogoComponent } from '../../../shared/ui/logo.component';
+import { extractErrorMessage } from '../../../shared/utils/http-error.util';
 
 @Component({
   selector: 'app-register',
@@ -107,7 +108,7 @@ export class RegisterComponent {
     this.authService.register(username!, email!, password!).subscribe({
       next: () => this.router.navigate(['/chat']),
       error: (err) => {
-        this.errorMessage.set(err.error?.detail ?? 'Error al registrarse');
+        this.errorMessage.set(extractErrorMessage(err, 'Error al registrarse'));
         this.loading.set(false);
       },
     });

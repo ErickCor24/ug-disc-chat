@@ -165,6 +165,10 @@ export class MessageInputComponent {
 
   messageText = '';
 
+  /** Evita saturar el socket: emite "escribiendo..." como máximo cada 1.5s. */
+  private _typingThrottled = false;
+  private static readonly TYPING_THROTTLE_MS = 1500;
+
   readonly connected = this.chatService.connected;
   readonly typingUsers = this.chatService.typingUsers;
 
@@ -176,9 +180,13 @@ export class MessageInputComponent {
   };
 
   onInput(): void {
-    if (this.messageText.trim()) {
-      this.chatService.sendTyping();
-    }
+    if (!this.messageText.trim() || this._typingThrottled) return;
+
+    this.chatService.sendTyping();
+    this._typingThrottled = true;
+    setTimeout(() => {
+      this._typingThrottled = false;
+    }, MessageInputComponent.TYPING_THROTTLE_MS);
   }
 
   submit(): void {

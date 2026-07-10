@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
@@ -5,8 +6,11 @@ from jose import JWTError
 
 from app.core.security import decode_token
 from app.db.base import AsyncSessionLocal
+from app.repositories.channel_repository import ChannelRepository
 from app.repositories.message_repository import MessageRepository
 from app.sockets.manager import manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -55,8 +59,9 @@ async def websocket_endpoint(
     `user_joined` / `user_left` se conservan como notificaciones puntuales.
     ─────────────────────────────────────────────────────────────
     Códigos de cierre personalizados:
-      4001 — No autorizado (JWT inválido o ausente)
-      4002 — Canal inválido
+      4001 — Token inválido o ausente
+      4002 — channel_id no es un UUID válido
+      4004 — Canal inexistente (UUID válido pero no existe en la BD)
     """
 
     # ── 1. Autenticación en el handshake (antes de accept) ────────────
@@ -75,11 +80,23 @@ async def websocket_endpoint(
         await websocket.close(code=4002)
         return
 
-    # ── 2. Aceptar conexión y registrar en el manager ─────────────────
-    await websocket.accept()
-    is_first_connection = manager.connect(channel_id, user_id, username, websocket)
+    # Validar que el canal exista realmente en la BD (no solo que el UUID
+    # tenga formato válido) para evitar que cualquier usuario autenticado
+    # abra un socket contra un canal inexistente.
+    async with AsyncSessionLocal() as db:
+        channel_repo = ChannelRepository(db)
+        channel = await channel_repo.get_by_id(channel_uuid)
+    if channel is None:
+        await websocket.close(code=4004)
+        return
 
-    # ── 3. Enviar historial de los últimos 20 mensajes ─────────────────
+    # ── 2. Aceptar conexión ─────────────────────────────────────────────
+    await websocket.accept()
+
+    # ── 3. Enviar historial ANTES de registrar en el roster ─────────────
+    # Se envía primero para evitar que un mensaje en vivo llegue al socket
+    # antes que el historial (condición de carrera entre el fetch, que cede
+    # el loop de eventos, y un broadcast concurrente).
     async with AsyncSessionLocal() as db:
         repo = MessageRepository(db)
         history = await repo.get_last_n_by_channel(channel_uuid, n=20)
@@ -100,22 +117,28 @@ async def websocket_endpoint(
             "messages": history_payload,
         })
 
-    # ── 4. Presencia: enviar el roster actual y notificar la entrada ───
-    # El roster se emite a TODO el canal (incluido quien entra) para que la
-    # lista de conectados sea idéntica en todos los clientes.
-    if is_first_connection:
+    # ── 4. Registrar en el manager ───────────────────────────────────────
+    # A partir de este punto el usuario queda en el roster: el try/finally
+    # garantiza que manager.disconnect se ejecute ante cualquier error
+    # (incluido durante el broadcast de entrada o el bucle principal), para
+    # que nunca quede "fantasma" en la lista de conectados.
+    is_first_connection = manager.connect(channel_id, user_id, username, websocket)
+    try:
+        # ── 5. Presencia: enviar el roster actual y notificar la entrada ─
+        # El roster se emite a TODO el canal (incluido quien entra) para que
+        # la lista de conectados sea idéntica en todos los clientes.
+        if is_first_connection:
+            await manager.broadcast_to_channel(
+                channel_id,
+                {"type": "user_joined", "user_id": user_id, "username": username},
+                exclude_user_id=user_id,
+            )
         await manager.broadcast_to_channel(
             channel_id,
-            {"type": "user_joined", "user_id": user_id, "username": username},
-            exclude_user_id=user_id,
+            {"type": "user_list", "users": manager.get_roster(channel_id)},
         )
-    await manager.broadcast_to_channel(
-        channel_id,
-        {"type": "user_list", "users": manager.get_roster(channel_id)},
-    )
 
-    # ── 5. Loop principal de recepción ─────────────────────────────────
-    try:
+        # ── 6. Loop principal de recepción ───────────────────────────────
         while True:
             data: dict = await websocket.receive_json()
             event_type: str = data.get("type", "")
@@ -164,9 +187,9 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         pass
     except Exception:
-        pass
+        logger.exception("Error en el bucle de recepcion del websocket")
     finally:
-        # ── 6. Limpieza al desconectar ─────────────────────────────────
+        # ── 7. Limpieza al desconectar ─────────────────────────────────
         # Se ejecuta siempre, también ante errores inesperados: de lo
         # contrario el usuario quedaría "fantasma" en la lista de conectados.
         user_left = manager.disconnect(channel_id, user_id, websocket)

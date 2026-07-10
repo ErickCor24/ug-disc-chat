@@ -1,4 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+
+import { AuthService } from '../services/auth.service';
 
 /**
  * Interceptor funcional (Angular 17+).
@@ -6,7 +9,8 @@ import { HttpInterceptorFn } from '@angular/common/http';
  * No aplica a URLs de WebSocket (WS no usa HttpClient).
  */
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = localStorage.getItem('access_token');
+  const authService = inject(AuthService);
+  const token = authService.getToken();
 
   if (token) {
     const cloned = req.clone({

@@ -1,10 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { IconComponent } from '../../../shared/ui/icon.component';
 import { LogoComponent } from '../../../shared/ui/logo.component';
+import { extractErrorMessage } from '../../../shared/utils/http-error.util';
 
 @Component({
   selector: 'app-login',
@@ -65,9 +66,10 @@ import { LogoComponent } from '../../../shared/ui/logo.component';
   `,
   styleUrl: 'login.component.scss',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(false);
@@ -77,6 +79,13 @@ export class LoginComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
+
+  ngOnInit(): void {
+    // Redirigido tras una sesión inválida/expirada (cierre WS 4001).
+    if (this.route.snapshot.queryParamMap.get('reason') === 'session_expired') {
+      this.errorMessage.set('Tu sesión expiró. Inicia sesión de nuevo.');
+    }
+  }
 
   onSubmit(): void {
     if (this.form.invalid) return;
@@ -89,7 +98,7 @@ export class LoginComponent {
     this.authService.login(email!, password!).subscribe({
       next: () => this.router.navigate(['/chat']),
       error: (err) => {
-        this.errorMessage.set(err.error?.detail ?? 'Error al iniciar sesión');
+        this.errorMessage.set(extractErrorMessage(err, 'Error al iniciar sesión'));
         this.loading.set(false);
       },
     });

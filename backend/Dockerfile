@@ -25,14 +25,14 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copiar el código fuente
 COPY app/ ./app/
 
-# Railway inyecta $PORT dinámicamente; el default es 8000 para dev local
+# Render inyecta $PORT dinámicamente; el default es 8000 para dev local
 ENV PORT=8000
 
 EXPOSE $PORT
 
-# Health check para Railway
+# Health check para Render
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health')"
 
-# Comando de inicio — Railway sobrescribe PORT en tiempo de ejecución
+# Comando de inicio — Render sobrescribe PORT en tiempo de ejecución
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

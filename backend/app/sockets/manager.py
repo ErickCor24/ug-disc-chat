@@ -87,17 +87,32 @@ class ConnectionManager:
         room = self._rooms.get(channel_id, {})
         # Materializar la lista antes de iterar: el envío puede mutar el dict.
         targets = [
-            (uid, ws)
+            (uid, entry["username"], ws)
             for uid, entry in list(room.items())
             for ws in list(entry["sockets"])
             if uid != exclude_user_id
         ]
 
-        for uid, ws in targets:
+        departed: list[tuple[str, str]] = []
+        for uid, uname, ws in targets:
             try:
                 await ws.send_json(message)
             except Exception:
-                self.disconnect(channel_id, uid, ws)
+                if self.disconnect(channel_id, uid, ws):
+                    departed.append((uid, uname))
+
+        # Si el usuario se quedó sin sockets al podar una conexión muerta
+        # durante el broadcast, avisar al resto del canal (mismo patrón que
+        # el finally del handler) para que no quede "fantasma" en el roster.
+        for uid, uname in departed:
+            await self.broadcast_to_channel(
+                channel_id,
+                {"type": "user_left", "user_id": uid, "username": uname},
+            )
+            await self.broadcast_to_channel(
+                channel_id,
+                {"type": "user_list", "users": self.get_roster(channel_id)},
+            )
 
     async def send_to_user(
         self, channel_id: str, user_id: str, message: dict

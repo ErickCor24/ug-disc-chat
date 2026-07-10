@@ -1,6 +1,6 @@
 -- ============================================================
--- SCHEMA: Discord Clone — Supabase / PostgreSQL
--- Ejecutar en orden en el SQL Editor de Supabase
+-- SCHEMA: ChatApp — PostgreSQL
+-- Ejecutar este script en la base de datos PostgreSQL (Neon)
 -- ============================================================
 
 -- 1. Tabla de Usuarios
@@ -39,9 +39,3 @@ INSERT INTO channels (name, description) VALUES
     ('tech',      'Conversaciones sobre tecnología'),
     ('off-topic', 'Todo lo demás')
 ON CONFLICT (name) DO NOTHING;
-
--- ============================================================
--- NOTA DE SEGURIDAD:
--- El backend accede con la SERVICE_ROLE key que bypasea RLS.
--- Para producción, habilitar RLS y crear políticas apropiadas.
--- ============================================================
