@@ -1,0 +1,36 @@
+stateDiagram-v2
+    state "Autenticando" as auth
+    state "Rechazada — 4001" as r4001
+    state "Rechazada — 4002" as r4002
+    state "Aceptada" as acc
+    state "Sincronizando" as sync
+    state "Activa" as act
+    state "Cerrando" as close
+    state "Desconectada" as off
+
+    [*] --> auth: Apertura de /ws/{channel_id}?token=JWT
+
+    auth --> r4001: JWT invalido o ausente
+    auth --> r4002: channel_id no es UUID
+    auth --> acc: Token valido
+
+    acc --> sync: accept() y registro
+    sync --> act: history_batch, user_joined, user_list
+
+    act --> close: Cierre o excepcion
+    close --> act: Quedan sockets abiertos
+    close --> off: Sin sockets — user_left, user_list
+
+    r4001 --> [*]
+    r4002 --> [*]
+    off --> [*]
+
+    note right of act
+        Intercambio de eventos message y typing.
+    end note
+
+    note right of close
+        La limpieza vive en un bloque finally,
+        para que una excepcion inesperada
+        no deje usuarios fantasma en el roster.
+    end note

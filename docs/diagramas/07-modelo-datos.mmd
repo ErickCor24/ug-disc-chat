@@ -1,0 +1,26 @@
+erDiagram
+    users {
+        UUID id PK "gen_random_uuid()"
+        VARCHAR username UK "50 caracteres · NOT NULL"
+        VARCHAR email UK "255 caracteres · NOT NULL"
+        TEXT password_hash "NOT NULL · hash bcrypt"
+        TIMESTAMPTZ created_at "NOW()"
+    }
+
+    channels {
+        UUID id PK "gen_random_uuid()"
+        VARCHAR name UK "100 caracteres · NOT NULL"
+        TEXT description "NULL"
+        TIMESTAMPTZ created_at "NOW()"
+    }
+
+    messages {
+        UUID id PK "gen_random_uuid()"
+        UUID channel_id FK "NOT NULL · ON DELETE CASCADE"
+        UUID user_id FK "NULL · ON DELETE SET NULL"
+        TEXT content "NOT NULL"
+        TIMESTAMPTZ created_at "NOW() · indice (channel_id, created_at DESC)"
+    }
+
+    users ||--o{ messages : "escribe"
+    channels ||--o{ messages : "contiene"

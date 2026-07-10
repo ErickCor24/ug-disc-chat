@@ -1,0 +1,33 @@
+sequenceDiagram
+    autonumber
+    participant A as Cliente de alice
+    participant B as Cliente de bob
+    participant H as handler.py
+    participant M as ConnectionManager
+    participant DB as PostgreSQL
+
+    Note over B,H: bob ya esta conectado al canal.
+
+    A->>H: WS /ws/{channel_id}?token=JWT
+    H->>H: _authenticate_ws(token)
+
+    alt JWT invalido o ausente
+        H-->>A: close(4001) — sin aceptar la conexion
+    else channel_id no es un UUID valido
+        H-->>A: close(4002)
+    else Credenciales validas
+        H->>A: accept()
+        H->>M: connect(channel_id, user_id, ws)
+        M-->>H: is_first_connection = true
+
+        H->>DB: SELECT ultimos 20 mensajes del canal
+        DB-->>H: Historial
+        H-->>A: history_batch { messages[] }
+
+        H-->>B: user_joined { user_id, username }
+        Note right of H: Solo en la primera conexion del usuario.<br/>Excluye a quien entra.
+
+        H-->>A: user_list { users[] }
+        H-->>B: user_list { users[] }
+        Note right of H: Roster completo, a todo el canal.<br/>Es la unica fuente de verdad<br/>de la lista de conectados.
+    end

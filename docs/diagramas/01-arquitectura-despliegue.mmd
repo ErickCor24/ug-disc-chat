@@ -1,0 +1,21 @@
+flowchart LR
+    subgraph cliente["Cliente"]
+        nav["Navegador<br/>Angular 21 (SPA)"]
+    end
+
+    subgraph vercel["Vercel"]
+        cdn["Archivos estaticos<br/>dist/frontend/browser"]
+    end
+
+    subgraph render["Render"]
+        api["FastAPI + Uvicorn<br/>REST + WebSocket"]
+    end
+
+    subgraph neon["Neon"]
+        db[("PostgreSQL<br/>users · channels · messages")]
+    end
+
+    nav -->|"HTTPS: carga inicial"| cdn
+    nav -->|"HTTPS/REST<br/>/api/v1/auth · /api/v1/channels"| api
+    nav <-->|"WSS full-duplex<br/>/ws/{channel_id}?token=JWT"| api
+    api -->|"asyncpg sobre TLS<br/>DB_SSL=require"| db

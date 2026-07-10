@@ -1,0 +1,28 @@
+sequenceDiagram
+    autonumber
+    actor U as alice
+    participant A as Cliente de alice
+    participant H as handler.py
+    participant R as MessageRepository
+    participant DB as PostgreSQL
+    participant B as Cliente de bob
+
+    U->>A: Escribe en el cuadro de texto
+    A->>H: typing { is_typing: true }
+    H-->>B: typing { username, is_typing }
+    Note right of H: Evento efimero: no se persiste.<br/>Se excluye al emisor.
+
+    U->>A: Pulsa Enter
+    A->>H: message { content }
+    H->>H: content.strip()
+
+    alt Contenido vacio
+        H->>H: Se ignora el mensaje
+    else Contenido valido
+        H->>R: create(channel_id, user_id, content)
+        R->>DB: INSERT INTO messages
+        DB-->>R: Mensaje persistido
+        H-->>A: message { id, username, content, created_at }
+        H-->>B: message { id, username, content, created_at }
+        Note right of H: Broadcast a todo el canal,<br/>incluido el emisor: el cliente<br/>renderiza al recibir el eco.
+    end
