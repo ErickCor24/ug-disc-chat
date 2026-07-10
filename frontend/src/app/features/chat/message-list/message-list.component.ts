@@ -18,7 +18,7 @@ import { getAvatarColor, getAvatarBgColor, getAvatarInitial } from '../../../sha
   standalone: true,
   imports: [DateFormatPipe, IconComponent],
   template: `
-    <div class="message-list" #scrollContainer>
+    <div class="message-list" #scrollContainer (scroll)="onScroll()">
       @if (messages().length === 0) {
         <div class="empty-state">
           <app-icon class="empty-icon" name="chat-bubble" />
@@ -34,7 +34,7 @@ import { getAvatarColor, getAvatarBgColor, getAvatarInitial } from '../../../sha
             <div class="avatar"
               [style.background]="getBgColor(msg.username)"
               [style.color]="getColor(msg.username)"
-              [attr.aria-label]="msg.username ?? 'Usuario'">
+              [attr.aria-label]="msg.username ?? 'Usuario eliminado'">
               {{ getInitial(msg.username) }}
             </div>
           }
@@ -198,6 +198,12 @@ export class MessageListComponent implements AfterViewChecked {
 
   readonly messages = input<Message[]>([]);
 
+  /** Umbral (px) para considerar que el usuario está "cerca del final". */
+  private static readonly NEAR_BOTTOM_THRESHOLD = 100;
+
+  private _previousMessageCount = 0;
+  private _userNearBottom = true;
+
   currentUserId(): string | null {
     return this.authService.currentUser()?.user_id ?? null;
   }
@@ -215,13 +221,31 @@ export class MessageListComponent implements AfterViewChecked {
   }
 
   ngAfterViewChecked(): void {
-    this._scrollToBottom();
+    const currentCount = this.messages().length;
+    const hasNewMessage = currentCount > this._previousMessageCount;
+    this._previousMessageCount = currentCount;
+
+    // Solo auto-scrollear si llegó un mensaje nuevo Y el usuario ya estaba
+    // cerca del final (no interrumpir a quien está leyendo el historial).
+    if (hasNewMessage && this._userNearBottom) {
+      this._scrollToBottom();
+    }
+  }
+
+  onScroll(): void {
+    const el = this.scrollContainer?.nativeElement;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    this._userNearBottom = distanceFromBottom <= MessageListComponent.NEAR_BOTTOM_THRESHOLD;
   }
 
   private _scrollToBottom(): void {
     try {
       const el = this.scrollContainer?.nativeElement;
-      if (el) el.scrollTop = el.scrollHeight;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+        this._userNearBottom = true;
+      }
     } catch {
       // Silenciar si el elemento no está disponible aún
     }

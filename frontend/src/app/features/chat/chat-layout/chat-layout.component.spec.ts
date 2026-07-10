@@ -58,16 +58,17 @@ describe('ChatLayoutComponent', () => {
 
   beforeEach(async () => {
     mockChannelService = {
-      channels: vi.fn().mockReturnValue(signal([])),
-      selectedChannel: vi.fn().mockReturnValue(signal(null)),
+      channels: signal<Channel[]>([]),
+      selectedChannel: signal<Channel | null>(null),
       loadChannels: vi.fn().mockReturnValue(of([])),
       selectChannel: vi.fn(),
     };
 
     mockChatService = {
-      connectedUsers: vi.fn().mockReturnValue(signal([])),
-      messages: vi.fn().mockReturnValue(signal([])),
-      connected: vi.fn().mockReturnValue(signal(false)),
+      connectedUsers: signal<any[]>([]),
+      messages: signal<Message[]>([]),
+      connected: signal(false),
+      wsError: signal<string | null>(null),
       disconnect: vi.fn(),
       connect: vi.fn(),
     };
@@ -104,6 +105,36 @@ describe('ChatLayoutComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  describe('Channel rendering', () => {
+    it('should render the empty state when no channel is selected', () => {
+      mockChannelService.selectedChannel.set(null);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('.no-channel')).toBeTruthy();
+      expect(compiled.querySelector('.chat-header')).toBeFalsy();
+      expect(compiled.querySelector('app-message-list')).toBeFalsy();
+    });
+
+    it('should render the channel header and chat body when a channel is selected', () => {
+      const channel: Channel = {
+        id: 'ch-1',
+        name: 'general',
+        description: 'Canal general',
+        created_at: '2025-01-01T00:00:00Z',
+      };
+
+      mockChannelService.selectedChannel.set(channel);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('.no-channel')).toBeFalsy();
+      expect(compiled.querySelector('.chat-header h3')?.textContent).toContain('general');
+      expect(compiled.querySelector('app-message-list')).toBeTruthy();
+      expect(compiled.querySelector('app-message-input')).toBeTruthy();
+    });
   });
 
   describe('ngOnInit', () => {

@@ -1,0 +1,37 @@
+flowchart TD
+    subgraph presentacion["Capa de presentacion"]
+        auth_r["api/v1/auth.py<br/>POST /register · POST /login"]
+        chan_r["api/v1/channels.py<br/>GET /channels"]
+        ws_h["sockets/handler.py<br/>WS /ws/{channel_id}"]
+    end
+
+    subgraph negocio["Capa de negocio"]
+        auth_s["services/auth_service.py"]
+        chan_s["services/channel_service.py"]
+        mgr["sockets/manager.py<br/>ConnectionManager (en memoria)"]
+    end
+
+    subgraph datos["Capa de acceso a datos"]
+        user_repo["repositories/user_repository.py"]
+        chan_repo["repositories/channel_repository.py"]
+        msg_repo["repositories/message_repository.py"]
+    end
+
+    subgraph transversal["Componentes transversales"]
+        sec["core/security.py<br/>bcrypt · JWT HS256"]
+        deps["core/dependencies.py<br/>get_current_user"]
+        cfg["core/config.py<br/>Settings"]
+    end
+
+    db[("PostgreSQL<br/>SQLAlchemy async + asyncpg")]
+
+    auth_r --> auth_s --> user_repo --> db
+    chan_r --> chan_s --> chan_repo --> db
+    ws_h --> msg_repo --> db
+    ws_h --> mgr
+
+    auth_s -.-> sec
+    chan_r -.-> deps
+    ws_h -.-> sec
+    deps -.-> sec
+    sec -.-> cfg

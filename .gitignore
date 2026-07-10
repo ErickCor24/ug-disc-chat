@@ -6,7 +6,6 @@ __pycache__/
 venv/
 env/
 *.egg-info/
-dist/
 build/
 .pytest_cache/
 .mypy_cache/
@@ -32,5 +31,5 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Docker
+# Logs
 *.log

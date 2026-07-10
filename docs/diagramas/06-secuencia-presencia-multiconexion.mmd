@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    participant P1 as alice · pestana 1
+    participant P2 as alice · pestana 2
+    participant H as handler.py
+    participant M as ConnectionManager
+    participant B as Cliente de bob
+
+    Note over M: _rooms[canal][alice] = { username, sockets: set() }
+
+    P1->>H: Conecta
+    H->>M: connect(...)
+    M-->>H: is_first_connection = true
+    H-->>B: user_joined + user_list
+
+    P2->>H: Conecta (segunda pestana)
+    H->>M: connect(...)
+    M-->>H: is_first_connection = false
+    Note right of M: El socket se agrega al conjunto.<br/>No se reemite user_joined.
+    H-->>B: user_list (sin cambios en el roster)
+
+    P1->>H: Cierra la pestana
+    H->>M: disconnect(canal, alice, ws1)
+    M->>M: sockets.discard(ws1) — queda 1 socket
+    M-->>H: quedo_sin_conexiones = false
+    Note right of H: alice sigue en linea.<br/>No se emite user_left.
+
+    P2->>H: Cierra la pestana
+    H->>M: disconnect(canal, alice, ws2)
+    M->>M: sockets vacio, se elimina a alice del canal
+    M-->>H: quedo_sin_conexiones = true
+    H-->>B: user_left { user_id, username }
+    H-->>B: user_list { users[] }
+
+    Note over H: La limpieza vive en un bloque finally,<br/>para que una excepcion no deje usuarios fantasma.

@@ -1,0 +1,29 @@
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant C as Cliente Angular
+    participant A as auth.py
+    participant S as AuthService
+    participant R as UserRepository
+    participant DB as PostgreSQL
+
+    U->>C: Envia usuario, email y contrasena
+    C->>A: POST /api/v1/auth/register
+    A->>S: register(username, email, password)
+    S->>R: get_by_email(email)
+    R->>DB: SELECT * FROM users WHERE email = :email
+    DB-->>R: Sin coincidencias
+
+    alt El email ya existe
+        S-->>C: 409 Conflict — "El email ya esta registrado"
+    else Email disponible
+        S->>S: hash_password() con bcrypt (salt aleatorio)
+        S->>R: create(username, email, password_hash)
+        R->>DB: INSERT INTO users
+        S->>S: create_access_token(sub=user_id, username)
+        S-->>C: 201 Created — access_token (JWT HS256, 24 h)
+        C->>C: localStorage.setItem('access_token', ...)
+        C-->>U: Redirige a /chat
+    end
+
+    Note over C,A: En login el flujo es identico,<br/>pero verify_password() compara el hash<br/>y devuelve 401 ante credenciales invalidas.

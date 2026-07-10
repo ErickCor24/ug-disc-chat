@@ -1,19 +1,32 @@
-# Discord Clone — FastAPI + Angular 21 + Supabase
+# ChatApp — FastAPI + Angular 21 + PostgreSQL
 
 Sistema de chat en tiempo real con canales temáticos, autenticación JWT y WebSockets.
+
+- **App:** https://ug-disc-chat.vercel.app
+- **API:** https://ug-disc-chat.onrender.com/docs
 
 ## Stack
 - **Backend:** FastAPI + SQLAlchemy Async + asyncpg
 - **Frontend:** Angular 21 (Standalone Components + Signals + Block Control Flow)
-- **Base de Datos:** Supabase (PostgreSQL)
-- **Despliegue:** Railway (Backend) + Vercel (Frontend)
+- **Base de Datos:** PostgreSQL gestionado (Neon)
+- **Despliegue:** Render (Backend) + Vercel (Frontend)
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [Manual técnico](docs/manual-tecnico.md) | Arquitectura, protocolo WebSocket, instalación y despliegue |
+| [Manual de usuario](docs/manual-usuario.md) | Guía de uso de la aplicación |
+| [Plan de pruebas](docs/plan-de-pruebas.md) | Estrategia, alcance y resultados de las 84 pruebas |
+| [Guion de sustentación](docs/guion-sustentacion.md) | Estructura de la exposición oral |
 
 ---
 
 ## Setup Local
 
-### 1. Base de Datos (Supabase)
-Ejecutar `supabase_schema.sql` en el SQL Editor de tu proyecto Supabase.
+### 1. Base de Datos
+Ejecutar `schema.sql` contra la base de datos. Crea las tablas, el índice de
+historial y los tres canales iniciales.
 
 ### 2. Backend
 
@@ -48,7 +61,7 @@ ng serve
 
 | Variable | Descripción |
 |----------|-------------|
-| `JWT_SECRET_KEY` | Clave secreta para firmar JWTs (mín. 32 chars) |
+| `JWT_SECRET_KEY` | Clave secreta para firmar JWTs (se recomienda al menos 32 caracteres) |
 | `DATABASE_URL` | `postgresql+asyncpg://user:pass@host/db` |
 | `ALLOWED_ORIGINS` | JSON array de orígenes CORS permitidos |
 | `DEBUG` | `True` en desarrollo, `False` en producción |
@@ -66,11 +79,11 @@ python -m pytest tests -q
 
 ## Despliegue
 
-### Railway (Backend)
-1. Crear nuevo proyecto → Deploy from GitHub repo
+### Render (Backend)
+1. Crear nuevo Web Service → Deploy from GitHub repo
 2. Seleccionar la carpeta `backend/` como Root Directory
-3. Railway detecta el `Dockerfile` automáticamente
-4. Agregar variables de entorno en Railway Dashboard:
+3. Render detecta el `Dockerfile` automáticamente
+4. Agregar variables de entorno en el panel del servicio:
    - `JWT_SECRET_KEY`
    - `DATABASE_URL`
    - `ALLOWED_ORIGINS=["https://tu-app.vercel.app"]`
@@ -82,7 +95,7 @@ python -m pytest tests -q
    - **Root Directory:** `frontend`
    - **Build Command:** `npm run build -- --configuration production`
    - **Output Directory:** `dist/frontend/browser`
-3. Actualizar `environment.prod.ts` con la URL de Railway antes del deploy
+3. Actualizar `environment.prod.ts` con la URL de Render antes del deploy
 
 ---
 
@@ -108,7 +121,7 @@ python -m pytest tests -q
 │           ├── auth/      # login, register
 │           └── chat/      # layout, channel-list, message-list, input
 │
-└── supabase_schema.sql
+└── schema.sql
 ```
 
 ## Protocolo WebSocket
@@ -120,9 +133,11 @@ Conexión: `ws://host/ws/{channel_id}?token=<JWT>`
 | `history_batch` | Server→Client | Historial inicial (últimos 20 msgs) |
 | `message` | Bidireccional | Mensaje de chat persistido |
 | `typing` | Bidireccional | Indicador "está escribiendo..." |
+| `user_list` | Server→Client | Lista completa de conectados al canal; fuente de verdad de la presencia |
 | `user_joined` | Server→Client | Notificación de entrada al canal |
 | `user_left` | Server→Client | Notificación de salida del canal |
 
 Códigos de cierre WebSocket:
 - `4001` — JWT inválido o expirado
-- `4002` — Channel ID inválido
+- `4002` — Channel ID inválido (no es un UUID válido)
+- `4004` — Canal inexistente (UUID válido pero no existe en la BD)

@@ -38,11 +38,16 @@ export class AuthService {
       .pipe(tap((res) => this._handleAuthResponse(res)));
   }
 
-  logout(): void {
+  logout(reason?: string): void {
     localStorage.removeItem('access_token');
     localStorage.removeItem('current_user');
     this._currentUser.set(null);
-    this.router.navigate(['/login']);
+
+    if (reason) {
+      this.router.navigate(['/login'], { queryParams: { reason } });
+    } else {
+      this.router.navigate(['/login']);
+    }
   }
 
   getToken(): string | null {

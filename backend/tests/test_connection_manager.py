@@ -269,9 +269,20 @@ async def test_broadcast_continues_after_dead_socket(manager):
     message = {"type": "message", "text": "hello"}
     await manager.broadcast_to_channel("ch1", message)
 
-    # Healthy sockets should have the message
-    assert len(ws_healthy1.messages) == 1
-    assert len(ws_healthy2.messages) == 1
+    # El mensaje original llega a los sockets sanos como primer evento.
+    assert ws_healthy1.messages[0] == message
+    assert ws_healthy2.messages[0] == message
+
+    # Al podar el socket muerto (última conexión de Bob), se avisa su salida
+    # al canal para que no quede "fantasma" en la lista de conectados.
+    types_healthy1 = [m.get("type") for m in ws_healthy1.messages]
+    assert "user_left" in types_healthy1
+    user_left = next(m for m in ws_healthy1.messages if m.get("type") == "user_left")
+    assert user_left["user_id"] == "user2"
+
+    user_list = next(m for m in ws_healthy1.messages if m.get("type") == "user_list")
+    usernames_in_list = [u["username"] for u in user_list["users"]]
+    assert "Bob" not in usernames_in_list
 
     # Dead socket should have no messages (send failed)
     assert len(ws_dead.messages) == 0

@@ -1,0 +1,56 @@
+flowchart TD
+    subgraph rutas["Enrutado"]
+        router["app.routes.ts<br/>/login · /register · /chat"]
+        guard["core/guards/auth.guard.ts<br/>Protege /chat"]
+    end
+
+    subgraph features["Vistas"]
+        login["features/auth/login"]
+        registro["features/auth/register"]
+        layout["features/chat/chat-layout<br/>Disposicion y drawer movil"]
+        canales["features/chat/channel-list"]
+        mensajes["features/chat/message-list"]
+        entrada["features/chat/message-input"]
+        usuarios["features/chat/user-list<br/>Usuarios conectados"]
+    end
+
+    subgraph estado["Servicios y estado"]
+        auth_s["core/services/auth.service.ts<br/>signal: currentUser"]
+        chan_s["core/services/channel.service.ts<br/>signal: channels"]
+        chat_s["core/services/chat.service.ts<br/>signals: messages · connectedUsers<br/>typingUsers · connected"]
+    end
+
+    subgraph infra["Infraestructura"]
+        interceptor["core/interceptors/jwt.interceptor.ts<br/>Authorization: Bearer"]
+        storage[("localStorage<br/>access_token")]
+        shared["shared/ui<br/>LogoComponent · IconComponent"]
+    end
+
+    api["API REST<br/>/api/v1"]
+    ws["WebSocket<br/>/ws/{channel_id}"]
+
+    router --> guard --> layout
+    router --> login
+    router --> registro
+
+    layout --> canales
+    layout --> mensajes
+    layout --> entrada
+    layout --> usuarios
+
+    login --> auth_s
+    registro --> auth_s
+    canales --> chan_s
+    mensajes --> chat_s
+    entrada --> chat_s
+    usuarios --> chat_s
+
+    auth_s --> storage
+    interceptor --> storage
+    auth_s --> interceptor
+    chan_s --> interceptor
+    interceptor --> api
+    chat_s <-->|"token en la URL"| ws
+
+    login -.-> shared
+    layout -.-> shared
