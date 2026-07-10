@@ -5,6 +5,11 @@ export interface User {
   username: string;
 }
 
+export interface ConnectedUser {
+  user_id: string;
+  username: string;
+}
+
 export interface Channel {
   id: string;
   name: string;
@@ -35,7 +40,8 @@ export type WsEventType =
   | 'message'
   | 'typing'
   | 'user_joined'
-  | 'user_left';
+  | 'user_left'
+  | 'user_list';
 
 export interface WsHistoryBatch {
   type: 'history_batch';
@@ -65,4 +71,9 @@ export interface WsUserEvent {
   username: string;
 }
 
-export type WsEvent = WsHistoryBatch | WsMessage | WsTyping | WsUserEvent;
+export interface WsUserList {
+  type: 'user_list';
+  users: ConnectedUser[];
+}
+
+export type WsEvent = WsHistoryBatch | WsMessage | WsTyping | WsUserEvent | WsUserList;

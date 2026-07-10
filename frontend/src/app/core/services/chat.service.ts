@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
-import { Message, WsEvent } from '../models';
+import { ConnectedUser, Message, WsEvent } from '../models';
 import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -12,6 +12,7 @@ export class ChatService {
   readonly messages = signal<Message[]>([]);
   readonly typingUsers = signal<string[]>([]);
   readonly connected = signal(false);
+  readonly connectedUsers = signal<ConnectedUser[]>([]);
 
   // ── Estado interno ─────────────────────────────────────────────────────
   private ws: WebSocket | null = null;
@@ -34,6 +35,7 @@ export class ChatService {
     this.ws.onopen = () => {
       this.connected.set(true);
       this.messages.set([]); // Limpiar mensajes del canal anterior
+      this.connectedUsers.set([]); // Limpiar usuarios conectados del canal anterior
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
@@ -62,6 +64,7 @@ export class ChatService {
     }
     this.connected.set(false);
     this.typingUsers.set([]);
+    this.connectedUsers.set([]);
     this._clearAllTypingTimers();
   }
 
@@ -99,6 +102,10 @@ export class ChatService {
 
       case 'typing':
         this._handleTyping(event.username, event.is_typing);
+        break;
+
+      case 'user_list':
+        this.connectedUsers.set(event.users);
         break;
 
       case 'user_joined':
