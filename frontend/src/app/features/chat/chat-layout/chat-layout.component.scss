@@ -1,5 +1,12 @@
 /* chat-layout.component.scss — Glass / Messenger claro */
 
+// En movil el boton hamburguesa flota sobre la cabecera. El gutter se deriva
+// de su geometria para que reservar el espacio no dependa de un valor
+// duplicado a mano en cada cabecera.
+$hamburger-size: 44px;
+$hamburger-inset: 8px;
+$hamburger-gutter: $hamburger-inset + $hamburger-size + 12px;
+
 :host {
   display: flex;
   width: 100%;
@@ -49,7 +56,7 @@
       align-items: center;
       gap: 0.5rem;
 
-      .brand-emoji { font-size: 1.3rem; }
+      .brand-logo { font-size: 1.3rem; }
 
       h2 {
         font-size: 1.05rem;
@@ -166,27 +173,24 @@
 
 // ── Responsive mobile ────────────────────────────────────────────
 @media (max-width: 640px) {
-  :host { position: relative; }
-
   // Mostrar hamburguesa en móvil
   .hamburger-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     position: absolute;
-    top: 1rem;
-    left: 1rem;
+    top: $hamburger-inset;
+    left: $hamburger-inset;
     z-index: 100;
     background: var(--color-surface);
     backdrop-filter: var(--blur);
     -webkit-backdrop-filter: var(--blur);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    width: 44px;
-    height: 44px;
+    width: $hamburger-size;
+    height: $hamburger-size;
     padding: 0;
     cursor: pointer;
-    font-family: var(--font);
     transition: background 0.15s, transform 0.1s;
     box-shadow: var(--shadow-sm);
 
@@ -209,10 +213,7 @@
   .drawer-backdrop {
     display: block;
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
@@ -230,23 +231,18 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 260px;
     height: 100vh;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 40;
-    flex-shrink: 0;
-    overflow: hidden;
 
     // Respetar prefers-reduced-motion
     @media (prefers-reduced-motion: reduce) {
       transition: transform 0.01s;
     }
 
-    // El boton hamburguesa queda por encima del drawer abierto: se reserva
-    // el espacio para que no tape el nombre de la aplicacion.
     .sidebar-header {
-      padding-left: 4rem;
+      padding-left: $hamburger-gutter;
     }
 
     &.open {
@@ -255,12 +251,13 @@
   }
 
   .chat-area {
-    flex: 1;
     min-height: 0;
-  }
 
-  // Ajustar el header del chat para que no se solape con el botón hamburguesa
-  .chat-header {
-    padding-left: 4.5rem;
+    // Debe anidarse bajo .chat-area: el `padding` en corto de la regla base
+    // gana por especificidad a un `padding-left` suelto y el boton tapaba
+    // el nombre del canal.
+    .chat-header {
+      padding-left: $hamburger-gutter;
+    }
   }
 }

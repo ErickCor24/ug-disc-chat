@@ -30,6 +30,21 @@ test.describe('mobile drawer', () => {
     await expect(hamburger).toHaveAttribute('aria-expanded', 'false');
     await expect(backdrop).toHaveCount(0);
   });
+
+  test('the floating hamburger does not cover the channel title', async ({ page }) => {
+    await login(page, 'alice@test.com', 'password123');
+
+    await page.locator('button.hamburger-btn').click();
+    await channelItem(page, 'general').click();
+    await expect(page.locator('.chat-header')).toBeVisible();
+
+    const hamburger = await page.locator('button.hamburger-btn').boundingBox();
+    const title = await page.locator('.chat-header .channel-hash').boundingBox();
+
+    expect(hamburger).not.toBeNull();
+    expect(title).not.toBeNull();
+    expect(hamburger!.x + hamburger!.width).toBeLessThanOrEqual(title!.x);
+  });
 });
 
 test.describe('desktop layout', () => {
