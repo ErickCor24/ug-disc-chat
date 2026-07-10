@@ -14,7 +14,6 @@ import { UserListComponent } from '../user-list/user-list.component';
   standalone: true,
   imports: [ChannelListComponent, MessageListComponent, MessageInputComponent, UserListComponent],
   template: `
-    <!-- Hamburger button en móvil (solo visible <= 640px) -->
     <button class="hamburger-btn"
       (click)="toggleDrawer()"
       [attr.aria-label]="sidebarOpen() ? 'Cerrar menú' : 'Abrir menú'"
@@ -22,7 +21,6 @@ import { UserListComponent } from '../user-list/user-list.component';
       <span class="hamburger-icon">☰</span>
     </button>
 
-    <!-- Backdrop/scrim en móvil -->
     @if (sidebarOpen()) {
       <div class="drawer-backdrop" (click)="closeSidebar()"></div>
     }
@@ -101,7 +99,6 @@ export class ChatLayoutComponent implements OnInit, OnDestroy {
     this.chatService.disconnect();
     this.channelService.selectChannel(channel);
     this.chatService.connect(channel.id);
-    // Cerrar el drawer en móvil después de seleccionar un canal
     this.closeSidebar();
   }
 

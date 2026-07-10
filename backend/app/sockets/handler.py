@@ -164,7 +164,6 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         pass
     except Exception:
-        # Cualquier error inesperado (JSON mal formado, socket roto, ...).
         pass
     finally:
         # ── 6. Limpieza al desconectar ─────────────────────────────────

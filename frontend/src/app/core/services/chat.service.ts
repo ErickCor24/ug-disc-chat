@@ -35,7 +35,7 @@ export class ChatService {
     this.ws.onopen = () => {
       this.connected.set(true);
       this.messages.set([]); // Limpiar mensajes del canal anterior
-      this.connectedUsers.set([]); // Limpiar usuarios conectados del canal anterior
+      this.connectedUsers.set([]);
     };
 
     this.ws.onmessage = (event: MessageEvent) => {

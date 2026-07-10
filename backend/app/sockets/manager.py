@@ -97,7 +97,6 @@ class ConnectionManager:
             try:
                 await ws.send_json(message)
             except Exception:
-                # Conexión cerrada inesperadamente — limpiar ese socket.
                 self.disconnect(channel_id, uid, ws)
 
     async def send_to_user(

@@ -36,7 +36,7 @@ def test_hash_password_deterministic_is_false():
     assert hash1 != hash2
 
 
-def test_verify_password_correct(manager=None):
+def test_verify_password_correct():
     """verify_password returns True for correct password."""
     password = "mySecretPassword123"
     hashed = hash_password(password)
